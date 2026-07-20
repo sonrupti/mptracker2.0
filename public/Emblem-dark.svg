@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+    
+    /* =======================================================
+       2. DARK MODE (Automatic Detection)
+       ======================================================= */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #121212; /* Deep dark background */
+      }
+      .emblem {
+        /* Inverts the black lines into white lines so it pops on dark themes */
+        filter: invert(1); 
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <img src="emblem.png" alt="State Emblem of India" class="emblem">
+
+</body>
+</html>

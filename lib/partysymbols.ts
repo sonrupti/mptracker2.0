@@ -1,0 +1,15 @@
+export const PARTY_SYMBOLS: Record<string, string> = {
+  "Bharatiya Janata Party": "/party-symbols/bjp.svg",
+  "Indian National Congress": "/party-symbols/congress.svg",
+  "Aam Aadmi Party": "/party-symbols/aap.svg",
+  "All India Trinamool Congress": "/party-symbols/tmc.svg",
+  "Samajwadi Party": "/party-symbols/sp.png",
+  "Dravida Munnetra Kazhagam": "/party-symbols/dmk.svg",
+  "Communist Party of India (Marxist)": "/party-symbols/cpm.svg",
+  "Bahujan Samaj Party": "/party-symbols/bsp.png",
+  "Telugu Desam Party": "/party-symbols/tdp.png",
+  "Janata Dal (United)": "/party-symbols/jd.svg",
+  "Shiv Sena": "/party-symbols/shivsena.png",
+  "Shiv Sena (Uddhav Balasaheb Thackeray)": "/party-symbols/shivsena_ubt.png",
+  "Independent": "/party-symbols/independent.svg",
+};

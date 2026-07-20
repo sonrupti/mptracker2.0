@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+    /* =======================================================
+       1. LIGHT MODE (Default)
+       ======================================================= */
+    body {
+      background-color: #ffffff; /* Clean white background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .emblem {
+      width: 300px;
+      height: auto;
+      /* If your base image has white lines, invert(1) turns them black for light mode.
+         If your base image already has black lines, change this to: filter: none; */
+      filter: none; 
+      transition: filter 0.3s ease;
+    }
