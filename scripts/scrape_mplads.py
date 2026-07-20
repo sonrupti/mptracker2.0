@@ -27,3 +27,4 @@ with sync_playwright() as p:
     print(json.dumps(data, indent=2))
 
     browser.close()
+    

@@ -182,11 +182,10 @@ export default function CitizenNavbar() {
           <div className="flex items-center gap-2">
 
 
-            {/* Desktop Language */}
-            <div className="hidden md:block">
-              <GoogleTranslate />
-            </div>
-
+           {/* Desktop Language */}
+<div className="hidden md:block relative shrink-0">
+  <GoogleTranslate id="google_translate_element_desktop" />
+</div>
 
 
             <Link
@@ -239,34 +238,22 @@ export default function CitizenNavbar() {
         </div>
 
       </nav>
-
-
-
-
-
-
-      {/* Mobile Language Selector */}
-      <div
-        className="
-          md:hidden fixed
-          top-16 right-3
-          z-50
-          bg-background
-          border border-border
-          rounded-xl
-          p-2
-          shadow-lg
-        "
-      >
-
-        <GoogleTranslate />
-
-      </div>
-
-
-
-
-
+      {/* Mobile Translator */}
+<div
+  className="
+    md:hidden
+    fixed
+    top-3
+    right-3
+    z-[9999]
+    bg-background
+    rounded-lg
+    shadow-md
+    p-2
+  "
+>
+  <GoogleTranslate id="google_translate_element_mobile" />
+</div>
 
 
       {/* Mobile Bottom Navigation */}

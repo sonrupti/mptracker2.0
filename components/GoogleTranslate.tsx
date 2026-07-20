@@ -19,51 +19,62 @@ function resetToEnglish() {
   window.location.reload();
 }
 
-export default function GoogleTranslate() {
+interface GoogleTranslateProps {
+  id?: string; // unique container id when mounted more than once (e.g. desktop + mobile)
+}
+
+export default function GoogleTranslate({ id = 'google_translate_element' }: GoogleTranslateProps) {
 
   useEffect(() => {
-
-    if (document.getElementById('google-translate-script')) return;
-
-
-    window.googleTranslateElementInit = () => {
-
-      new window.google.translate.TranslateElement(
-        {
-          pageLanguage: 'en',
-          includedLanguages: 'hi,or,ta,te,bn,mr,gu,kn,ml,pa',
-          autoDisplay: false,
-        },
-        'google_translate_element'
-      );
-
+    const initializeTranslator = () => {
+      const container = document.getElementById(id);
+      if (
+        window.google &&
+        window.google.translate &&
+        container &&
+        container.childNodes.length === 0
+      ) {
+        new window.google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            includedLanguages: "hi,or,ta,te,bn,mr,gu,kn,ml,pa",
+            autoDisplay: false,
+          },
+          id
+        );
+      }
     };
 
+    // If google.translate is already loaded, just try to init this instance
+    if (window.google?.translate) {
+      initializeTranslator();
+      return;
+    }
 
-    const script = document.createElement('script');
+    // Chain onto any previously-set init callback so multiple instances don't clobber each other
+    const previousInit = window.googleTranslateElementInit;
+    window.googleTranslateElementInit = () => {
+      previousInit?.();
+      initializeTranslator();
+    };
 
-    script.id = 'google-translate-script';
-
-    script.src =
-      'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-
-    script.async = true;
-
-    document.body.appendChild(script);
-
-
-  }, []);
-
-
+    if (!document.getElementById("google-translate-script")) {
+      const script = document.createElement("script");
+      script.id = "google-translate-script";
+      script.src =
+        "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [id]);
 
   return (
     <div className="min-w-[140px] space-y-1.5">
 
       <div
-        id="google_translate_element"
+        id={id}
         className="translate-widget min-h-[40px]"
       />
-
 
       <button
         onClick={resetToEnglish}
@@ -77,7 +88,6 @@ export default function GoogleTranslate() {
       >
         Reset to English
       </button>
-
 
     </div>
   );
