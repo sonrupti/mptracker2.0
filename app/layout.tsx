@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { LanguageProvider } from "@/context/LanguageContext";
-import GoogleTranslate from '@/components/GoogleTranslate';
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </ConditionalLayout>
             {/* Kept inside the providers so it inherits theme context and matches hydration trees */}
-            <GoogleTranslate />
+           
           </LanguageProvider>
         </ThemeProvider>
       </body>
