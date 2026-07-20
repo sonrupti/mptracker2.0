@@ -1,6 +1,5 @@
 'use client';
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -157,7 +156,7 @@ function MPSearchSelect({ mps, selectedId, onSelect, placeholder, accent }: { mp
   );
 }
 
-export default function ComparePage() {
+function ComparePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMp1 = searchParams.get('mp1');
@@ -457,5 +456,18 @@ export default function ComparePage() {
         </div>
       )}
     </div>
+  );
+}
+export default function ComparePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+          <div className="w-8 h-8 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+        </div>
+      }
+    >
+      <ComparePageContent />
+    </Suspense>
   );
 }

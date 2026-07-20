@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import IndiaMap from '@/components/IndiaMap';
 import { MPCardSkeleton, EmptyState, ScoreBadge, PartyLogo } from '@/components/citizen/CitizenUI';
 
-export default function SearchPage() {
+function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -288,5 +288,18 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+          <div className="w-8 h-8 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+        </div>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
   );
 }

@@ -7,7 +7,14 @@ import {
   IndianRupee
 } from 'lucide-react';
 
-import { MPLADSSummary } from '@/lib/supabase';
+interface MPLADSSummary {
+  total_sanctioned: number;
+  total_utilised: number;
+  utilisation_percentage: number;
+  total_projects: number;
+  completed_projects: number;
+  ongoing_projects: number;
+}
 
 interface Props {
   summary: MPLADSSummary | null;
@@ -57,6 +64,7 @@ export default function MPLADSCard({ summary }: Props) {
 
       </div>
 
+
       <div className="mt-6">
 
         <div className="flex justify-between text-sm mb-2">
@@ -68,6 +76,7 @@ export default function MPLADSCard({ summary }: Props) {
           </span>
 
         </div>
+
 
         <div className="w-full h-3 rounded-full bg-background overflow-hidden">
 
@@ -82,7 +91,9 @@ export default function MPLADSCard({ summary }: Props) {
 
       </div>
 
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+
 
         <div className="bg-background rounded-2xl p-4">
 
@@ -98,6 +109,7 @@ export default function MPLADSCard({ summary }: Props) {
 
         </div>
 
+
         <div className="bg-background rounded-2xl p-4">
 
           <Building2 className="w-5 h-5 text-violet-500 mb-2"/>
@@ -111,6 +123,7 @@ export default function MPLADSCard({ summary }: Props) {
           </p>
 
         </div>
+
 
         <div className="bg-background rounded-2xl p-4">
 
@@ -126,6 +139,7 @@ export default function MPLADSCard({ summary }: Props) {
 
         </div>
 
+
         <div className="bg-background rounded-2xl p-4">
 
           <Clock3 className="w-5 h-5 text-amber-500 mb-2"/>
@@ -139,6 +153,7 @@ export default function MPLADSCard({ summary }: Props) {
           </p>
 
         </div>
+
 
       </div>
 
