@@ -6,6 +6,8 @@ declare global {
   interface Window {
     google: any;
     googleTranslateElementInit: () => void;
+    __googleTranslateReady?: boolean;
+    __googleTranslateCallbacks?: Array<() => void>;
   }
 }
 
@@ -20,13 +22,13 @@ function resetToEnglish() {
 }
 
 interface GoogleTranslateProps {
-  id?: string; // unique container id when mounted more than once (e.g. desktop + mobile)
+  id?: string; // unique container id — required when mounting more than once (e.g. desktop + mobile)
 }
 
 export default function GoogleTranslate({ id = 'google_translate_element' }: GoogleTranslateProps) {
 
   useEffect(() => {
-    const initializeTranslator = () => {
+    const initThisInstance = () => {
       const container = document.getElementById(id);
       if (
         window.google &&
@@ -45,19 +47,28 @@ export default function GoogleTranslate({ id = 'google_translate_element' }: Goo
       }
     };
 
-    // If google.translate is already loaded, just try to init this instance
-    if (window.google?.translate) {
-      initializeTranslator();
+    // If Google's script already finished loading (e.g. this instance mounted later),
+    // just init immediately.
+    if (window.__googleTranslateReady) {
+      initThisInstance();
       return;
     }
 
-    // Chain onto any previously-set init callback so multiple instances don't clobber each other
-    const previousInit = window.googleTranslateElementInit;
+    // Otherwise, register this instance's init function in a shared queue.
+    // Every mounted GoogleTranslate instance pushes its own callback here,
+    // regardless of mount order or effect timing.
+    if (!window.__googleTranslateCallbacks) {
+      window.__googleTranslateCallbacks = [];
+    }
+    window.__googleTranslateCallbacks.push(initThisInstance);
+
+    // The actual Google script callback — set once, runs every queued callback.
     window.googleTranslateElementInit = () => {
-      previousInit?.();
-      initializeTranslator();
+      window.__googleTranslateReady = true;
+      window.__googleTranslateCallbacks?.forEach((fn) => fn());
     };
 
+    // Only append the script tag once, no matter how many instances mount.
     if (!document.getElementById("google-translate-script")) {
       const script = document.createElement("script");
       script.id = "google-translate-script";

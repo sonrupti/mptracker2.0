@@ -238,18 +238,16 @@ export default function CitizenNavbar() {
         </div>
 
       </nav>
-      {/* Mobile Translator */}
+      {/* Mobile Top Bar — logo + translate, scrolls with content until it hits top, then sticks */}
 <div
   className="
     md:hidden
-    fixed
-    top-3
-    right-3
-    z-[9999]
-    bg-background
-    rounded-lg
-    shadow-md
-    p-2
+    sticky top-0 z-40
+    flex items-center justify-end
+    px-3 py-2
+    bg-background/95
+    backdrop-blur-xl
+    border-b border-border/60
   "
 >
   <GoogleTranslate id="google_translate_element_mobile" />
