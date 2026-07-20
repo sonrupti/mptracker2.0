@@ -336,3 +336,21 @@ body.skiptranslate {
   color: white;
   border-color: #374151;
 }
+/* Google Translate dropdown fix */
+
+.translate-widget {
+  min-height: 40px;
+}
+
+.goog-te-gadget {
+  font-size: 0 !important;
+}
+
+.goog-te-gadget select.goog-te-combo {
+  display: block !important;
+  width: 140px !important;
+  height: 35px !important;
+  font-size: 14px !important;
+  padding: 5px;
+  border-radius: 8px;
+}
