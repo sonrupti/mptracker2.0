@@ -163,6 +163,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+  // Normalize MP names for better matching
+function normalizeName(name: string) {
+  return name
+    ?.toLowerCase()
+    .replace(/[^a-z]/g, "") || "";
+}
 
 console.log("Supabase URL:", supabaseUrl);
 console.log("Supabase Key exists:", !!supabaseAnonKey);
@@ -232,21 +238,31 @@ export const db = {
 
   
   async getMPLADSExpenditure(mpName: string): Promise<MPLADSExpenditure[]> {
-    if (!supabase) return [];
+  if (!supabase) return [];
 
-    const { data, error } = await supabase
-      .from("mplads_expenditure")
-      .select("*")
-      .eq("mp_name", mpName)
-      .order("expenditure_date", { ascending: false });
+  const { data, error } = await supabase
+    .from("mplads_expenditure")
+    .select("*")
+    .order("expenditure_date", { ascending: false });
 
-    if (error) {
-      console.error(error);
-      return [];
-    }
+  if (error) {
+    console.error(error);
+    return [];
+  }
 
-    return data ?? [];
-  },
+  console.log("MPLADS searched MP:", mpName);
+  console.log("Total rows:", data?.length);
+  console.log("First rows:", data?.slice(0, 5));
+
+ const filtered = (data ?? []).filter(
+  (item) =>
+    normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
+    normalizeName(mpName).includes(normalizeName(item.mp_name))
+);
+  console.log("Matched rows:", filtered.length);
+
+  return filtered;
+},
 
   async getMPLADSRecommended(mpName: string): Promise<MPLADSRecommended[]> {
     if (!supabase) return [];
@@ -254,15 +270,18 @@ export const db = {
     const { data, error } = await supabase
       .from("mplads_recommended")
       .select("*")
-      .eq("mp_name", mpName)
+      
       .order("recommendation_date", { ascending: false });
 
     if (error) {
       console.error(error);
       return [];
     }
-
-    return data ?? [];
+return (data ?? []).filter(
+  item =>
+  normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
+  normalizeName(mpName).includes(normalizeName(item.mp_name))
+);
   },
 
   async getMPLADSCompleted(mpName: string): Promise<MPLADSCompleted[]> {
@@ -271,15 +290,30 @@ export const db = {
     const { data, error } = await supabase
       .from("mplads_completed")
       .select("*")
-      .eq("mp_name", mpName)
+      
       .order("completed_date", { ascending: false });
 
     if (error) {
       console.error(error);
       return [];
     }
-
-    return data ?? [];
+    console.log(
+  "Recommended MP names:",
+  [...new Set((data ?? []).map(item => item.mp_name))].slice(0, 50)
+);
+console.log("Recommended searched MP:", mpName);
+console.log("Recommended matched:", 
+  (data ?? []).filter(
+    item =>
+      normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
+      normalizeName(mpName).includes(normalizeName(item.mp_name))
+  ).length
+);
+  return (data ?? []).filter(
+  item =>
+  normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
+  normalizeName(mpName).includes(normalizeName(item.mp_name))
+);
   },
 
   
@@ -352,15 +386,16 @@ export const db = {
     // Mock implementation
     let result = [...MOCK_MPS];
 
-    if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(
-        mp =>
-          mp.name.toLowerCase().includes(searchLower) ||
-          mp.constituency.toLowerCase().includes(searchLower) ||
-          mp.region.toLowerCase().includes(searchLower)
-      );
-    }
+   if (filters?.search) {
+  const searchNormalized = normalizeName(filters.search);
+
+  result = result.filter(
+    mp =>
+      normalizeName(mp.name).includes(searchNormalized) ||
+      mp.constituency.toLowerCase().includes(filters.search!.toLowerCase()) ||
+      mp.region.toLowerCase().includes(filters.search!.toLowerCase())
+  );
+}
 
     if (filters?.party && filters.party !== 'All') {
       result = result.filter(mp => mp.party.toLowerCase().includes(filters.party!.toLowerCase()));

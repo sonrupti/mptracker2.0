@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import MPLADSCard from '@/components/citizen/MPLADSCard';
+import MPLADSDashboard from "@/components/mplads/MPLADSDashboard";
 import {
   Clock, MessageSquare, FileText, Activity, MapPin, TrendingUp, Award, Calendar,
   LayoutGrid, CheckCircle2, HelpCircle, Sparkles, ExternalLink, Wallet,
@@ -32,10 +33,11 @@ export default function MPProfilePage() {
   const [questions, setQuestions] = useState<MPQuestion[]>([]);
   const [debates, setDebates] = useState<MPDebate[]>([]);
   const [bills, setBills] = useState<MPBill[]>([]);
-  const [mplads, setMPLADS] = useState<any>(null);
-  const [mpladsRecommended, setMPLADSRecommended] = useState<any[]>([]);
-  const [mpladsCompleted, setMPLADSCompleted] = useState<any[]>([]);
+
+ const [mpladsRecommended, setMPLADSRecommended] = useState<any[]>([]);
+const [mpladsCompleted, setMPLADSCompleted] = useState<any[]>([]);
 const [mpladsExpenditure, setMPLADSExpenditure] = useState<any[]>([]);
+const [mpladsLoading, setMPLADSLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [tab, setTab] = useState('overview');
@@ -48,46 +50,60 @@ const [mpladsExpenditure, setMPLADSExpenditure] = useState<any[]>([]);
   }, []);
 
   useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    setError(false);
-    setTab('overview');
+  if (!id) return;
 
-    Promise.all([
-  db.getMpById(id),
-  db.getMpHistory(id),
-  db.getMpComparison(id),
-  db.getMps(),
-  db.getMpQuestions(id),
-  db.getMpDebates(id),
-  db.getMpBills(id),
-])
-      .then(([mpData, historyData, compData, mpsData, questionsData, debatesData, billsData]) => {
-        if (!mpData) { setError(true); return; }
-        setMp(mpData);
-        setHistory(historyData || []);
-        setComparison(compData);
-        if (mpsData && Array.isArray(mpsData)) {
-          setRelated(mpsData.filter(m => m.state === mpData.state && m.id !== mpData.id).slice(0, 3));
-        }
-        setQuestions(questionsData || []);
-        setDebates(debatesData || []);
-        setBills(billsData || []);
-        Promise.all([
-  db.getMPLADSRecommended(mpData.name),
-  db.getMPLADSCompleted(mpData.name),
-  db.getMPLADSExpenditure(mpData.name),
-]).then(([recommended, completed, expenditure]) => {
-  setMPLADSRecommended(recommended);
-  setMPLADSCompleted(completed);
-  setMPLADSExpenditure(expenditure);
-});
-       
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [id]);
+  setLoading(true);
+  setError(false);
+  setTab('overview');
 
+  Promise.all([
+    db.getMpById(id),
+    db.getMpHistory(id),
+    db.getMpComparison(id),
+    db.getMps(),
+    db.getMpQuestions(id),
+    db.getMpDebates(id),
+    db.getMpBills(id),
+  ])
+    .then(async ([mpData, historyData, compData, mpsData, questionsData, debatesData, billsData]) => {
+      if (!mpData) {
+        setError(true);
+        return;
+      }
+
+      setMp(mpData);
+      setHistory(historyData || []);
+      setComparison(compData);
+
+      if (mpsData && Array.isArray(mpsData)) {
+        setRelated(
+          mpsData
+            .filter(m => m.state === mpData.state && m.id !== mpData.id)
+            .slice(0, 3)
+        );
+      }
+
+      setQuestions(questionsData || []);
+      setDebates(debatesData || []);
+      setBills(billsData || []);
+
+      const [recommended, completed, expenditure] = await Promise.all([
+        db.getMPLADSRecommended(mpData.name),
+        db.getMPLADSCompleted(mpData.name),
+        db.getMPLADSExpenditure(mpData.name),
+      ]);
+
+      setMPLADSRecommended(recommended || []);
+      setMPLADSCompleted(completed || []);
+      setMPLADSExpenditure(expenditure || []);
+    })
+    .catch(() => setError(true))
+    .finally(() => {
+      setLoading(false);
+      setMPLADSLoading(false);
+    });
+
+}, [id]);
   const ministryBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
     questions.forEach(q => {
@@ -483,85 +499,17 @@ const [mpladsExpenditure, setMPLADSExpenditure] = useState<any[]>([]);
               </>
             )}
 
-             {tab === 'mplad' && (
-<section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-
-<h2 className="text-lg font-black mb-6">
-MPLADS Fund Details
-</h2>
-
-
-<div className="grid md:grid-cols-3 gap-4">
-
-
-<div className="p-5 rounded-xl bg-background border">
-<p className="text-xs font-bold text-muted-foreground">
-Recommended Works
-</p>
-
-<p className="text-3xl font-black mt-2">
-{mpladsRecommended.length}
-</p>
-</div>
-
-
-
-<div className="p-5 rounded-xl bg-background border">
-<p className="text-xs font-bold text-muted-foreground">
-Completed Works
-</p>
-
-<p className="text-3xl font-black mt-2">
-{mpladsCompleted.length}
-</p>
-</div>
-
-
-
-<div className="p-5 rounded-xl bg-background border">
-<p className="text-xs font-bold text-muted-foreground">
-Expenditure Records
-</p>
-
-<p className="text-3xl font-black mt-2">
-{mpladsExpenditure.length}
-</p>
-</div>
-
-
-</div>
-
-
-
-<div className="mt-8">
-
-<h3 className="font-bold mb-3">
-Recent Expenditure
-</h3>
-
-{mpladsExpenditure.slice(0,5).map(item => (
-
-<div
-key={item.id}
-className="p-4 mb-3 rounded-xl bg-background border"
->
-
-<p className="font-semibold">
-{item.work_description}
-</p>
-
-<p className="text-sm text-muted-foreground">
-₹{item.expenditure_amount_rupees.toLocaleString()}
-</p>
-
-</div>
-
-))}
-
-</div>
-
-
-</section>
+           {tab === "mplad" && (
+  mpladsLoading ? (
+    <PageLoader />
+  ) : (
+    <MPLADSDashboard
+      mp={mp}
+      recommended={mpladsRecommended}
+      completed={mpladsCompleted}
+      expenditure={mpladsExpenditure}
+    />
+  )
 )}
 
             {tab === 'ai' && (

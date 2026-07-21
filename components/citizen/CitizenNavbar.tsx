@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 import {
   Home,
@@ -71,6 +72,15 @@ export default function CitizenNavbar() {
 
   return (
     <>
+    {/* Hidden Google Translate engine — never shown, drives translation via cookie */}
+    <div
+      aria-hidden
+      style={{ position: 'absolute', top: -9999, left: -9999, height: 0, width: 0, overflow: 'hidden' }}
+    >
+      <GoogleTranslate id="google_translate_element_hidden" />
+    </div>
+
+   
 
       {/* Desktop + Tablet Navbar */}
       <nav
@@ -182,9 +192,9 @@ export default function CitizenNavbar() {
           <div className="flex items-center gap-2">
 
 
-           {/* Desktop Language */}
+         {/* Desktop Language */}
 <div className="hidden md:block relative shrink-0">
-  <GoogleTranslate id="google_translate_element_desktop" />
+  <LanguageSwitcher />
 </div>
 
 
@@ -298,13 +308,10 @@ export default function CitizenNavbar() {
             })
           }
 
-
-          {/* Mobile Language */}
-
-          <div className="flex items-center justify-center overflow-hidden">
-            <GoogleTranslate id="google_translate_element_mobile" />
-          </div>
-
+{/* Mobile Language */}
+<div className="flex items-center justify-center">
+  <LanguageSwitcher direction="up" compact />
+</div>
 
         </div>
 
