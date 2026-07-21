@@ -79,17 +79,20 @@ export default function GoogleTranslate({ id = 'google_translate_element' }: Goo
     }
   }, [id]);
 
-  return (
-    <div className="min-w-[140px] space-y-1.5">
+ return (
+  <div className="min-w-[140px] space-y-1.5">
 
-      <div
-        id={id}
-        className="translate-widget min-h-[40px]"
-      />
+    <div
+      id={id}
+      className="translate-widget min-h-[40px]"
+    />
+
+    <div className="flex items-center gap-2">
 
       <button
         onClick={resetToEnglish}
         className="
+          flex items-center gap-1
           text-[12px]
           font-semibold
           text-indigo-400
@@ -97,9 +100,12 @@ export default function GoogleTranslate({ id = 'google_translate_element' }: Goo
           transition-colors
         "
       >
-        Reset to English
+        🌐 English
       </button>
 
     </div>
-  );
+
+  </div>
+);
+   
 }

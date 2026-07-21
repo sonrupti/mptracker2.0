@@ -238,23 +238,10 @@ export default function CitizenNavbar() {
         </div>
 
       </nav>
-      {/* Mobile Top Bar — logo + translate, scrolls with content until it hits top, then sticks */}
-<div
-  className="
-    md:hidden
-    sticky top-0 z-40
-    flex items-center justify-end
-    px-3 py-2
-    bg-background/95
-    backdrop-blur-xl
-    border-b border-border/60
-  "
->
-  <GoogleTranslate id="google_translate_element_mobile" />
-</div>
+     
 
 
-      {/* Mobile Bottom Navigation */}
+          {/* Mobile Bottom Navigation */}
 
       <div
         className="
@@ -267,14 +254,12 @@ export default function CitizenNavbar() {
         "
       >
 
-        <div className="grid grid-cols-6 h-16">
-
+        <div className="grid grid-cols-7 h-16">
 
           {
             NAV_ITEMS.map((item)=>{
 
               const active = isActive(item.href);
-
 
               return (
 
@@ -296,27 +281,32 @@ export default function CitizenNavbar() {
                     )}
                   />
 
-
-                  <span className="
-                    text-[9px]
-                    font-bold
-                    uppercase
-                  ">
+                  <span
+                    className="
+                      text-[9px]
+                      font-bold
+                      uppercase
+                    "
+                  >
                     {item.name}
                   </span>
-
 
                 </Link>
 
               );
 
-
             })
           }
 
 
-        </div>
+          {/* Mobile Language */}
 
+          <div className="flex items-center justify-center overflow-hidden">
+            <GoogleTranslate id="google_translate_element_mobile" />
+          </div>
+
+
+        </div>
 
       </div>
 
