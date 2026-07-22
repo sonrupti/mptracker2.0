@@ -87,11 +87,11 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
       setDebates(debatesData || []);
       setBills(billsData || []);
 
-      const [recommended, completed, expenditure] = await Promise.all([
-        db.getMPLADSRecommended(mpData.name),
-        db.getMPLADSCompleted(mpData.name),
-        db.getMPLADSExpenditure(mpData.name),
-      ]);
+     const [recommended, completed, expenditure] = await Promise.all([
+  db.getMPLADSRecommended(mpData.id),
+  db.getMPLADSCompleted(mpData.id),
+  db.getMPLADSExpenditure(mpData.id),
+]);
 
       setMPLADSRecommended(recommended || []);
       setMPLADSCompleted(completed || []);

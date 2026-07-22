@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+import LanguageSwitcher from '@/components/citizen/LanguageSwitcher';
 
 import {
   Home,

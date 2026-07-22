@@ -237,86 +237,54 @@ export const db = {
   },
 
   
-  async getMPLADSExpenditure(mpName: string): Promise<MPLADSExpenditure[]> {
+ async getMPLADSRecommended(mpId: string): Promise<MPLADSRecommended[]> {
   if (!supabase) return [];
 
   const { data, error } = await supabase
-    .from("mplads_expenditure")
+    .from("mplads_recommended")
     .select("*")
-    .order("expenditure_date", { ascending: false });
+    .eq("mp_id", mpId)
+    .eq("house", "Lok Sabha");
 
   if (error) {
     console.error(error);
     return [];
   }
 
-  console.log("MPLADS searched MP:", mpName);
-  console.log("Total rows:", data?.length);
-  console.log("First rows:", data?.slice(0, 5));
-
- const filtered = (data ?? []).filter(
-  (item) =>
-    normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
-    normalizeName(mpName).includes(normalizeName(item.mp_name))
-);
-  console.log("Matched rows:", filtered.length);
-
-  return filtered;
+  return data ?? [];
 },
+async getMPLADSCompleted(mpId: string): Promise<MPLADSCompleted[]> {
+  if (!supabase) return [];
 
-  async getMPLADSRecommended(mpName: string): Promise<MPLADSRecommended[]> {
-    if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("mplads_completed")
+    .select("*")
+    .eq("mp_id", mpId)
+    .eq("house", "Lok Sabha");
 
-    const { data, error } = await supabase
-      .from("mplads_recommended")
-      .select("*")
-      
-      .order("recommendation_date", { ascending: false });
+  if (error) {
+    console.error(error);
+    return [];
+  }
 
-    if (error) {
-      console.error(error);
-      return [];
-    }
-return (data ?? []).filter(
-  item =>
-  normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
-  normalizeName(mpName).includes(normalizeName(item.mp_name))
-);
-  },
+  return data ?? [];
+},
+async getMPLADSExpenditure(mpId: string): Promise<MPLADSExpenditure[]> {
+  if (!supabase) return [];
 
-  async getMPLADSCompleted(mpName: string): Promise<MPLADSCompleted[]> {
-    if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("mplads_expenditure")
+    .select("*")
+    .eq("mp_id", mpId)
+    .eq("house", "Lok Sabha");
 
-    const { data, error } = await supabase
-      .from("mplads_completed")
-      .select("*")
-      
-      .order("completed_date", { ascending: false });
+  if (error) {
+    console.error(error);
+    return [];
+  }
 
-    if (error) {
-      console.error(error);
-      return [];
-    }
-    console.log(
-  "Recommended MP names:",
-  [...new Set((data ?? []).map(item => item.mp_name))].slice(0, 50)
-);
-console.log("Recommended searched MP:", mpName);
-console.log("Recommended matched:", 
-  (data ?? []).filter(
-    item =>
-      normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
-      normalizeName(mpName).includes(normalizeName(item.mp_name))
-  ).length
-);
-  return (data ?? []).filter(
-  item =>
-  normalizeName(item.mp_name).includes(normalizeName(mpName)) ||
-  normalizeName(mpName).includes(normalizeName(item.mp_name))
-);
-  },
-
-  
+  return data ?? [];
+},
   async getMps(filters?: {
     search?: string;
     party?: string;
