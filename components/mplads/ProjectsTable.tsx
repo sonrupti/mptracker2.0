@@ -18,6 +18,26 @@ interface Props {
   completed: MPLADSCompleted[];
 }
 
+// The raw `work_description` field from the government source is often a
+// full free-text request paragraph, not a short project name (e.g. "...the
+// festival is scheduled for 12th January. In light of its immense cultural
+// and educational value, I humbly request..."). Rendering that whole thing
+// as the row's headline is what was blowing up the table's row height.
+// We derive a short title by cutting at the first sentence boundary (period
+// or comma), capped at ~60 chars, and keep the full text available as a
+// clamped secondary line + hover tooltip.
+function getProjectTitle(description: string, maxLength = 60): string {
+  const firstBoundary = description.search(/[.,]/);
+  const candidate =
+    firstBoundary > 0 && firstBoundary < maxLength
+      ? description.slice(0, firstBoundary)
+      : description.slice(0, maxLength);
+
+  return candidate.length < description.length
+    ? `${candidate.trim()}…`
+    : candidate.trim();
+}
+
 export default function ProjectsTable({
   recommended,
   completed,
@@ -85,7 +105,15 @@ export default function ProjectsTable({
 
       <div className="overflow-x-auto rounded-2xl border border-border">
 
-        <table className="w-full">
+        <table className="w-full table-fixed">
+
+          <colgroup>
+            <col className="w-[38%]" />
+            <col className="w-[16%]" />
+            <col className="w-[16%]" />
+            <col className="w-[14%]" />
+            <col className="w-[16%]" />
+          </colgroup>
 
           <thead className="bg-muted/40">
 
@@ -136,12 +164,18 @@ export default function ProjectsTable({
 
               <tr
                 key={project.id}
-                className="border-t border-border hover:bg-muted/30 transition"
+                className="border-t border-border hover:bg-muted/30 transition align-top"
               >
 
-                <td className="p-4">
+                <td className="p-4 align-top" title={project.work_description}>
 
                   <div className="font-semibold">
+
+                    {getProjectTitle(project.work_description)}
+
+                  </div>
+
+                  <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
 
                     {project.work_description}
 
@@ -149,20 +183,20 @@ export default function ProjectsTable({
 
                 </td>
 
-                <td className="p-4">
+                <td className="p-4 align-top truncate">
 
                   {project.category}
 
                 </td>
 
-                <td className="p-4 font-semibold">
+                <td className="p-4 align-top font-semibold">
 
                   ₹
                   {project.recommended_amount_rupees.toLocaleString()}
 
                 </td>
 
-                <td className="p-4">
+                <td className="p-4 align-top">
 
                   {new Date(
                     project.recommendation_date
@@ -170,7 +204,7 @@ export default function ProjectsTable({
 
                 </td>
 
-                <td className="p-4">
+                <td className="p-4 align-top">
 
                   {project.status === 'Completed' ? (
 

@@ -75,13 +75,13 @@ export default function PerformanceSummary({
           </p>
         </div>
 
-        <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
+        <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center shrink-0">
           <Target className="text-indigo-600" />
         </div>
 
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-5">
 
         {items.map((item) => {
           const Icon = item.icon;
@@ -89,7 +89,12 @@ export default function PerformanceSummary({
           return (
             <div
               key={item.title}
-              className="rounded-2xl border border-border p-5"
+              // min-w-0 is the fix: grid items default to min-width:auto,
+              // which stops long unbroken strings like "₹25,00,000" from
+              // wrapping -- they overflow the card and bleed into the next
+              // one instead. min-w-0 lets the cell actually shrink so the
+              // text below can wrap normally.
+              className="min-w-0 rounded-2xl border border-border p-5"
             >
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.color}`}
@@ -101,7 +106,7 @@ export default function PerformanceSummary({
                 {item.title}
               </p>
 
-              <h3 className="text-2xl font-black mt-2">
+              <h3 className="text-xl sm:text-2xl font-black mt-2 break-words">
                 {item.value}
               </h3>
             </div>
@@ -132,8 +137,8 @@ export default function PerformanceSummary({
 
       <div className="grid grid-cols-3 gap-6 mt-8 text-center">
 
-        <div>
-          <h2 className="text-3xl font-black text-green-600">
+        <div className="min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-black text-green-600">
             {summary.completedCount}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -141,8 +146,8 @@ export default function PerformanceSummary({
           </p>
         </div>
 
-        <div>
-          <h2 className="text-3xl font-black text-yellow-600">
+        <div className="min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-black text-yellow-600">
             {summary.ongoingCount}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -150,8 +155,8 @@ export default function PerformanceSummary({
           </p>
         </div>
 
-        <div>
-          <h2 className="text-3xl font-black text-blue-600">
+        <div className="min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-black text-blue-600">
             {summary.recommendedCount}
           </h2>
           <p className="text-sm text-muted-foreground">
