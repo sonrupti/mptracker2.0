@@ -101,7 +101,7 @@ export default function LanguageSwitcher({
             onClick={() => setLanguage('en')}
             className={cn(
               'w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-accent',
-              current === 'en' && 'text-indigo-500'
+              current === 'en' && 'text-orange-500'
             )}
           >
             English
@@ -114,7 +114,7 @@ export default function LanguageSwitcher({
                 onClick={() => setLanguage(lang.code)}
                 className={cn(
                   'text-left px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-accent truncate',
-                  current === lang.code && 'text-indigo-500'
+                  current === lang.code && 'text-orange-500'
                 )}
               >
                 {lang.label}

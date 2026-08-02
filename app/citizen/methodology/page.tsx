@@ -6,7 +6,7 @@ import { Info, BarChart2, Clock, MessageSquare, MessageCircle, FileText } from '
 
 const BREAKDOWN = [
   { icon: <Clock className="h-4 w-4 text-emerald-500" />, label: 'Attendance', weight: '35%', max: '100%', note: 'Percentage of sessions attended out of total sessions held.' },
-  { icon: <MessageSquare className="h-4 w-4 text-violet-500" />, label: 'Questions Asked', weight: '25%', max: 'Cap: 500', note: 'Total oral and written questions raised in Lok Sabha.' },
+  { icon: <MessageSquare className="h-4 w-4 text-green-600" />, label: 'Questions Asked', weight: '25%', max: 'Cap: 500', note: 'Total oral and written questions raised in Lok Sabha.' },
   { icon: <MessageCircle className="h-4 w-4 text-pink-500" />, label: 'Debates Participated', weight: '25%', max: 'Cap: 200', note: 'Number of debates and discussions the MP contributed to.' },
   { icon: <FileText className="h-4 w-4 text-amber-500" />, label: 'Bills Sponsored', weight: '15%', max: 'Cap: 20', note: 'Private member bills introduced by the MP.' },
 ];
@@ -34,14 +34,14 @@ export default function CitizenMethodologyPage() {
       </div>
 
       {/* Data Source */}
-      <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-2">
+      <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-5 space-y-2">
         <div className="flex items-center gap-2">
-          <Info className="h-4 w-4 text-indigo-500" />
-          <p className="text-sm font-black text-indigo-500">Data Source</p>
+          <Info className="h-4 w-4 text-orange-500" />
+          <p className="text-sm font-black text-orange-500">Data Source</p>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">
           All data is sourced from{' '}
-          <a href="https://prsindia.org" target="_blank" rel="noreferrer" className="text-indigo-500 underline">
+          <a href="https://prsindia.org" target="_blank" rel="noreferrer" className="text-orange-500 underline">
             PRS Legislative Research
           </a>{' '}
           and the official Lok Sabha records. The dataset covers the 18th Lok Sabha (June 2024 onwards). Data is static and was last updated in 2024.
@@ -51,7 +51,7 @@ export default function CitizenMethodologyPage() {
       {/* Score Formula */}
       <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
         <div className="flex items-center gap-2">
-          <BarChart2 className="h-4 w-4 text-indigo-500" />
+          <BarChart2 className="h-4 w-4 text-orange-500" />
           <h2 className="text-sm font-black text-foreground">Overall Score Formula</h2>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -70,7 +70,7 @@ export default function CitizenMethodologyPage() {
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <p className="text-xs font-bold text-foreground">{item.label}</p>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 font-bold">{item.weight}</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 font-bold">{item.weight}</span>
                     <span className="text-[9px] text-muted-foreground">{item.max}</span>
                   </div>
                 </div>

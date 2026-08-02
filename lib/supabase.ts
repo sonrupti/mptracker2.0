@@ -169,6 +169,34 @@ function normalizeName(name: string) {
     ?.toLowerCase()
     .replace(/[^a-z]/g, "") || "";
 }
+// ==========================================
+// Region aliases
+// ==========================================
+
+export const REGION_ALIASES: Record<string, string[]> = {
+  Odisha: ["Odisha", "Orissa"],
+  Puducherry: ["Puducherry", "Pondicherry"],
+  "Jammu and Kashmir": [
+    "Jammu and Kashmir",
+    "Jammu & Kashmir",
+    "J&K",
+    "Jammu Kashmir",
+  ],
+};
+
+export function normalizeRegion(region: string): string {
+  if (!region) return "";
+
+  const cleaned = region.trim();
+
+  for (const [canonical, aliases] of Object.entries(REGION_ALIASES)) {
+    if (aliases.some(alias => alias.toLowerCase() === cleaned.toLowerCase())) {
+      return canonical;
+    }
+  }
+
+  return cleaned;
+}
 
 console.log("Supabase URL:", supabaseUrl);
 console.log("Supabase Key exists:", !!supabaseAnonKey);
@@ -307,19 +335,8 @@ async getMPLADSExpenditure(mpId: string): Promise<MPLADSExpenditure[]> {
         }
         if (filters?.region && filters.region !== 'All') {
 
-          const regionAliases: Record<string, string[]> = {
-            Odisha: ['Odisha', 'Orissa'],
-            Puducherry: ['Puducherry', 'Pondicherry'],
-            'Jammu and Kashmir': [
-              'Jammu and Kashmir',
-              'Jammu & Kashmir',
-              'J&K',
-              'Jammu Kashmir'
-            ],
-          };
-
-          const regions =
-            regionAliases[filters.region] || [filters.region];
+          const normalizedRegion = normalizeRegion(filters.region);
+const regions = REGION_ALIASES[normalizedRegion] || [normalizedRegion];
 
           query = query.in('region', regions);
         }
@@ -370,18 +387,10 @@ async getMPLADSExpenditure(mpId: string): Promise<MPLADSExpenditure[]> {
     }
 
     if (filters?.region && filters.region !== 'All') {
-      const regionAliases: Record<string, string[]> = {
-        Odisha: ['Odisha', 'Orissa'],
-        Puducherry: ['Puducherry', 'Pondicherry'],
-        'Jammu and Kashmir': [
-          'Jammu and Kashmir',
-          'Jammu & Kashmir',
-          'J&K',
-          'Jammu Kashmir'
-        ],
-      };
+       const normalizedRegion = normalizeRegion(filters.region);
+const regions = REGION_ALIASES[normalizedRegion] || [normalizedRegion];
 
-      const regions = regionAliases[filters.region] || [filters.region];
+     
       result = result.filter(mp => regions.includes(mp.region));
     }
 

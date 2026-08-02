@@ -102,16 +102,16 @@ function SearchPageContent() {
 
       <div>
         <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex justify-between">
-          Min Score <span className="text-indigo-500">{minScore}</span>
+          Min Score <span className="text-orange-500">{minScore}</span>
         </label>
-        <input type="range" min="0" max="100" value={minScore} onChange={e => setMinScore(Number(e.target.value))} className="w-full accent-indigo-500" />
+        <input type="range" min="0" max="100" value={minScore} onChange={e => setMinScore(Number(e.target.value))} className="w-full accent-orange-500" />
       </div>
 
       <div>
         <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex justify-between">
-          Min Attendance <span className="text-indigo-500">{minAttendance}%</span>
+          Min Attendance <span className="text-orange-500">{minAttendance}%</span>
         </label>
-        <input type="range" min="0" max="100" value={minAttendance} onChange={e => setMinAttendance(Number(e.target.value))} className="w-full accent-indigo-500" />
+        <input type="range" min="0" max="100" value={minAttendance} onChange={e => setMinAttendance(Number(e.target.value))} className="w-full accent-orange-500" />
       </div>
 
       <div>
@@ -146,7 +146,7 @@ function SearchPageContent() {
           onClick={() => setMobileFiltersOpen(v => !v)}
           className={cn(
             'w-full flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold border transition-colors',
-            hasActiveFilters ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-card border-border/60'
+            hasActiveFilters ? 'bg-orange-500 text-white border-orange-500' : 'bg-card border-border/60'
           )}
         >
           <SlidersHorizontal className="h-4 w-4" /> Filters {hasActiveFilters && `(${filteredMps.length})`}
@@ -179,10 +179,10 @@ function SearchPageContent() {
           <div className="bg-card border border-border/60 rounded-[2rem] p-5 md:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-indigo-500" /> Filter by State
+                <MapPin className="w-4 h-4 text-orange-500" /> Filter by State
               </h2>
               {stateFilter && (
-                <button onClick={() => setStateFilter('')} className="text-xs font-bold text-indigo-500 hover:underline">Clear ({stateFilter})</button>
+                <button onClick={() => setStateFilter('')} className="text-xs font-bold text-orange-500 hover:underline">Clear ({stateFilter})</button>
               )}
             </div>
             <div className="max-w-xs mx-auto">
@@ -216,13 +216,13 @@ function SearchPageContent() {
                 <AnimatePresence>
                   {filteredMps.slice(0, 24).map((mp, i) => (
                     <motion.div key={mp.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.03 }}
-                      className="bg-card border border-border/60 rounded-2xl p-5 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-0.5 transition-all duration-200 flex flex-col group"
+                      className="bg-card border border-border/60 rounded-2xl p-5 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5 transition-all duration-200 flex flex-col group"
                     >
                       <div className="flex items-start gap-3 mb-5">
-                        <img src={mp.image_url} alt={mp.name} className="w-14 h-14 rounded-full object-cover border border-border shrink-0 group-hover:ring-2 group-hover:ring-indigo-500/30 transition-all" />
+                        <img src={mp.image_url} alt={mp.name} className="w-14 h-14 rounded-full object-cover border border-border shrink-0 group-hover:ring-2 group-hover:ring-orange-500/30 transition-all" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <h3 className="font-bold text-base leading-tight truncate group-hover:text-indigo-500 transition-colors">{mp.name}</h3>
+                            <h3 className="font-bold text-base leading-tight truncate group-hover:text-orange-500 transition-colors">{mp.name}</h3>
                             <PartyLogo party={mp.party} size="sm" />
                           </div>
                           <span className="inline-block px-2 py-0.5 mt-1 bg-foreground/5 text-[10px] font-bold rounded uppercase tracking-wide">{mp.party}</span>
@@ -245,7 +245,7 @@ function SearchPageContent() {
                       </div>
 
                       <div className="mt-auto grid grid-cols-2 gap-2">
-                        <Link href={`/citizen/mp/${mp.id}`} className="flex items-center justify-center py-2.5 bg-indigo-500 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 active:scale-[0.98] transition-all">
+                        <Link href={`/citizen/mp/${mp.id}`} className="flex items-center justify-center py-2.5 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600 active:scale-[0.98] transition-all">
                           View Profile
                         </Link>
                         <Link href={`/citizen/compare?mp1=${mp.id}`} className="flex items-center justify-center gap-1.5 py-2.5 bg-foreground/5 border border-border/60 rounded-xl text-xs font-bold hover:bg-foreground/10 transition-colors">
@@ -270,11 +270,11 @@ function SearchPageContent() {
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center mb-8">Quick actions</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {[
-                  { href: '/citizen/rankings', icon: TrendingUp, label: 'Explore Rankings', desc: 'Top performing MPs across India.', color: 'bg-indigo-500/10 text-indigo-500' },
-                  { href: '/citizen/compare', icon: ArrowRightLeft, label: 'Compare MPs', desc: 'Head-to-head on key metrics.', color: 'bg-purple-500/10 text-purple-500' },
+                  { href: '/citizen/rankings', icon: TrendingUp, label: 'Explore Rankings', desc: 'Top performing MPs across India.', color: 'bg-orange-500/10 text-orange-500' },
+                  { href: '/citizen/compare', icon: ArrowRightLeft, label: 'Compare MPs', desc: 'Head-to-head on key metrics.', color: 'bg-green-600/10 text-green-600' },
                   { href: '/citizen/election', icon: Vote, label: 'Election Insights', desc: 'Compare your local candidates.', color: 'bg-pink-500/10 text-pink-500' },
                 ].map(item => (
-                  <Link key={item.href} href={item.href} className="p-6 bg-card border border-border/60 rounded-2xl hover:border-indigo-500/30 hover:shadow-sm transition-all group">
+                  <Link key={item.href} href={item.href} className="p-6 bg-card border border-border/60 rounded-2xl hover:border-orange-500/30 hover:shadow-sm transition-all group">
                     <div className={cn('w-11 h-11 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform', item.color)}>
                       <item.icon className="w-5 h-5" />
                     </div>
@@ -295,7 +295,7 @@ export default function SearchPage() {
     <Suspense
       fallback={
         <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-          <div className="w-8 h-8 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+          <div className="w-8 h-8 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
         </div>
       }
     >

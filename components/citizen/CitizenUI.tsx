@@ -46,7 +46,7 @@ export function ProgressBar({ value, max = 100, className, barClassName }: { val
         whileInView={{ width: `${pct}%` }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
-        className={cn('h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full', barClassName)}
+        className={cn('h-full bg-gradient-to-r from-orange-500 to-green-600 rounded-full', barClassName)}
       />
     </div>
   );
@@ -60,7 +60,7 @@ export function BenchmarkRow({ label, value, benchmarks, format, max }: {
   format: (v: number) => string | number;
   max: number;
 }) {
-  const rows = [{ label, value, color: 'bg-indigo-500' }, ...benchmarks.map(b => ({ ...b, color: b.color || 'bg-zinc-400/60' }))];
+  const rows = [{ label, value, color: 'bg-orange-500' }, ...benchmarks.map(b => ({ ...b, color: b.color || 'bg-zinc-400/60' }))];
   return (
     <div className="space-y-2.5">
       {rows.map(row => (
@@ -108,13 +108,13 @@ export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: st
             onClick={() => onChange(tab.id)}
             className={cn(
               'relative flex items-center gap-1.5 px-4 py-3 text-sm font-bold whitespace-nowrap transition-colors shrink-0',
-              isActive ? 'text-indigo-500' : 'text-muted-foreground hover:text-foreground'
+              isActive ? 'text-orange-500' : 'text-muted-foreground hover:text-foreground'
             )}
           >
             {tab.icon && <tab.icon className="w-3.5 h-3.5" />}
             {tab.label}
             {isActive && (
-              <motion.div layoutId="tab-underline" className="absolute -bottom-px left-0 right-0 h-[2px] bg-indigo-500 rounded-full" />
+              <motion.div layoutId="tab-underline" className="absolute -bottom-px left-0 right-0 h-[2px] bg-orange-500 rounded-full" />
             )}
           </button>
         );
@@ -140,7 +140,7 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'w-8 h-8 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin',
+        'w-8 h-8 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin',
         className
       )}
     />
@@ -258,7 +258,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="group flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
     >
-      <span className="w-7 h-7 rounded-lg bg-card border border-border flex items-center justify-center group-hover:border-indigo-500/50 transition-colors">
+      <span className="w-7 h-7 rounded-lg bg-card border border-border flex items-center justify-center group-hover:border-orange-500/50 transition-colors">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
         </svg>
@@ -272,7 +272,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 export function ScoreBadge({ score, size = 'md' }: { score: number; size?: 'sm' | 'md' | 'lg' }) {
   const color =
     score >= 80 ? 'text-emerald-500'
-    : score >= 60 ? 'text-indigo-500'
+    : score >= 60 ? 'text-orange-500'
     : score >= 40 ? 'text-amber-500'
     : 'text-rose-500';
 

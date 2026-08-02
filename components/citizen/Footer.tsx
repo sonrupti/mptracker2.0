@@ -49,10 +49,10 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-2 space-y-4">
             <Link href="/citizen" className="flex items-center gap-2 w-fit">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-green-700 flex items-center justify-center">
                 <span className="text-white text-xs font-black">L</span>
               </div>
-              <span className="text-lg font-black bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              <span className="text-lg font-black bg-gradient-to-r from-orange-500 to-green-600 bg-clip-text text-transparent">
                 LokLens
               </span>
             </Link>
@@ -64,14 +64,14 @@ export default function Footer() {
                 href="https://github.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl bg-foreground/5 border border-border/60 flex items-center justify-center hover:border-indigo-500/40 hover:text-indigo-500 transition-colors"
+                className="w-9 h-9 rounded-xl bg-foreground/5 border border-border/60 flex items-center justify-center hover:border-orange-500/40 hover:text-orange-500 transition-colors"
                 aria-label="GitHub"
               >
                 <GithubIcon className="w-4 h-4" />
               </a>
               <a
                 href="mailto:contact@loklens.in"
-                className="w-9 h-9 rounded-xl bg-foreground/5 border border-border/60 flex items-center justify-center hover:border-indigo-500/40 hover:text-indigo-500 transition-colors"
+                className="w-9 h-9 rounded-xl bg-foreground/5 border border-border/60 flex items-center justify-center hover:border-orange-500/40 hover:text-orange-500 transition-colors"
                 aria-label="Contact"
               >
                 <Mail className="w-4 h-4" />
@@ -87,11 +87,11 @@ export default function Footer() {
                 {col.links.map(link => (
                   <li key={link.label}>
                     {link.external ? (
-                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground/70 hover:text-indigo-500 transition-colors">
+                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground/70 hover:text-orange-500 transition-colors">
                         {link.label}
                       </a>
                     ) : (
-                      <Link href={link.href} className="text-sm font-medium text-foreground/70 hover:text-indigo-500 transition-colors">
+                      <Link href={link.href} className="text-sm font-medium text-foreground/70 hover:text-orange-500 transition-colors">
                         {link.label}
                       </Link>
                     )}

@@ -23,7 +23,7 @@ import GoogleTranslate from '@/components/GoogleTranslate';
 
 
 const NAV_ITEMS = [
-  { name: 'Home', href: '/citizen', icon: Home },
+  { name: 'Home', href: '/citizen/simple', icon: Home },
   { name: 'Rankings', href: '/citizen/rankings', icon: TrendingUp },
   { name: 'Parties', href: '/citizen/parties', icon: Landmark },
   { name: 'Compare', href: '/citizen/compare', icon: ArrowRightLeft },
@@ -64,8 +64,8 @@ export default function CitizenNavbar() {
 
 
   const isActive = (href: string) =>
-    href === '/citizen'
-      ? pathname === '/citizen'
+    href === '/citizen/simple'
+      ? pathname === '/citizen/simple'
       : pathname.startsWith(href);
 
 
@@ -102,13 +102,13 @@ export default function CitizenNavbar() {
 
           {/* Logo */}
           <Link
-            href="/citizen"
+            href="/citizen/simple"
             className="flex items-center gap-2 shrink-0"
           >
 
             <div className="
               w-7 h-7 rounded-lg
-              bg-gradient-to-br from-indigo-500 to-purple-600
+              bg-gradient-to-br from-orange-500 to-green-700
               flex items-center justify-center
             ">
               <span className="text-white text-xs font-black">
@@ -119,7 +119,7 @@ export default function CitizenNavbar() {
 
             <span className="
               text-lg font-black
-              bg-gradient-to-r from-indigo-500 to-purple-500
+              bg-gradient-to-r from-orange-500 to-green-600
               bg-clip-text text-transparent
             ">
               LokLens
@@ -147,7 +147,7 @@ export default function CitizenNavbar() {
                     className={cn(
                       'relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition',
                       active
-                        ? 'text-indigo-500'
+                        ? 'text-orange-500'
                         : 'text-foreground/60 hover:text-foreground'
                     )}
                   >
@@ -160,7 +160,7 @@ export default function CitizenNavbar() {
                           className="
                             absolute inset-0
                             rounded-xl
-                            bg-indigo-500/10
+                            bg-orange-500/10
                           "
                         />
 
@@ -279,7 +279,7 @@ export default function CitizenNavbar() {
                   className={cn(
                     'flex flex-col items-center justify-center gap-1',
                     active
-                      ? 'text-indigo-500'
+                      ? 'text-orange-500'
                       : 'text-muted-foreground'
                   )}
                 >

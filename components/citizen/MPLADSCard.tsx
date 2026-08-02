@@ -56,7 +56,7 @@ export default function MPLADSCard({ summary }: Props) {
             Utilisation
           </p>
 
-          <p className="text-3xl font-black text-indigo-500">
+          <p className="text-3xl font-black text-orange-500">
             {summary.utilisation_percentage}%
           </p>
 
@@ -81,7 +81,7 @@ export default function MPLADSCard({ summary }: Props) {
         <div className="w-full h-3 rounded-full bg-background overflow-hidden">
 
           <div
-            className="h-full bg-indigo-500 rounded-full transition-all duration-700"
+            className="h-full bg-orange-500 rounded-full transition-all duration-700"
             style={{
               width: `${summary.utilisation_percentage}%`
             }}
@@ -97,7 +97,7 @@ export default function MPLADSCard({ summary }: Props) {
 
         <div className="bg-background rounded-2xl p-4">
 
-          <IndianRupee className="w-5 h-5 text-indigo-500 mb-2"/>
+          <IndianRupee className="w-5 h-5 text-orange-500 mb-2"/>
 
           <p className="text-xs text-muted-foreground">
             Sanctioned
@@ -112,7 +112,7 @@ export default function MPLADSCard({ summary }: Props) {
 
         <div className="bg-background rounded-2xl p-4">
 
-          <Building2 className="w-5 h-5 text-violet-500 mb-2"/>
+          <Building2 className="w-5 h-5 text-green-600 mb-2"/>
 
           <p className="text-xs text-muted-foreground">
             Projects

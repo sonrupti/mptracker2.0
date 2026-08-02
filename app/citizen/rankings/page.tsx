@@ -93,13 +93,13 @@ export default function RankingsPage() {
           'group flex items-center gap-4 p-4 md:p-5 bg-card border rounded-2xl hover:shadow-lg transition-all duration-200',
           variant === 'bottom'
             ? 'border-amber-500/30 hover:border-amber-500/50 hover:shadow-amber-500/8'
-            : 'border-border/70 hover:border-indigo-500/40 hover:shadow-indigo-500/8'
+            : 'border-border/70 hover:border-orange-500/40 hover:shadow-orange-500/8'
         )}
       >
         {/* Rank */}
         <span className={cn(
           'w-10 flex items-center justify-end gap-1 text-right text-xl font-black shrink-0 tabular-nums transition-colors',
-          variant === 'top' && mp.rank <= 3 ? 'text-indigo-500' : variant === 'bottom' ? 'text-amber-500/80' : 'text-muted-foreground/50 group-hover:text-indigo-400'
+          variant === 'top' && mp.rank <= 3 ? 'text-orange-500' : variant === 'bottom' ? 'text-amber-500/80' : 'text-muted-foreground/50 group-hover:text-orange-400'
         )}>
           {mp.rank}
         </span>
@@ -109,7 +109,7 @@ export default function RankingsPage() {
           <img
             src={mp.image_url}
             alt={mp.name}
-            className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover border-2 border-background ring-1 ring-border group-hover:ring-indigo-500/30 transition-all"
+            className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover border-2 border-background ring-1 ring-border group-hover:ring-orange-500/30 transition-all"
           />
           <div className="absolute -bottom-1 -right-1">
             <PartyLogo party={mp.party} size="sm" />
@@ -118,7 +118,7 @@ export default function RankingsPage() {
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-base md:text-lg font-bold truncate group-hover:text-indigo-500 transition-colors">
+          <h2 className="text-base md:text-lg font-bold truncate group-hover:text-orange-500 transition-colors">
             {mp.name}
           </h2>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
@@ -151,13 +151,13 @@ export default function RankingsPage() {
             
           </div>
           <div className="relative group w-full md:w-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-indigo-500 transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-orange-500 transition-colors" />
             <input
               type="text"
               placeholder="Search MP, Party, or State"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full md:w-80 h-11 pl-11 pr-4 bg-background border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-muted-foreground/60"
+              className="w-full md:w-80 h-11 pl-11 pr-4 bg-background border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all placeholder:text-muted-foreground/60"
             />
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function RankingsPage() {
                   'flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border transition-colors',
                   metric === m.key
                     ? 'bg-foreground text-background border-foreground'
-                    : 'bg-card border-border/60 text-foreground/70 hover:border-indigo-500/40'
+                    : 'bg-card border-border/60 text-foreground/70 hover:border-orange-500/40'
                 )}
               >
                 <m.icon className="h-3.5 w-3.5" /> {m.label}
@@ -194,8 +194,8 @@ export default function RankingsPage() {
               className={cn(
                 'px-4 py-2 rounded-xl text-sm font-bold border transition-colors',
                 scope === 'All India'
-                  ? 'bg-indigo-500 text-white border-indigo-500'
-                  : 'bg-card border-border/60 text-foreground/70 hover:border-indigo-500/40'
+                  ? 'bg-orange-500 text-white border-orange-500'
+                  : 'bg-card border-border/60 text-foreground/70 hover:border-orange-500/40'
               )}
             >
               All India
@@ -203,7 +203,7 @@ export default function RankingsPage() {
             <select
               value={scope === 'All India' ? '' : scope}
               onChange={e => setScope(e.target.value || 'All India')}
-              className="h-10 px-3 bg-card border border-border/60 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer"
+              className="h-10 px-3 bg-card border border-border/60 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/40 cursor-pointer"
             >
               <option value="">Or pick a state…</option>
               {states.map(s => <option key={s} value={s}>{s}</option>)}
@@ -246,9 +246,9 @@ export default function RankingsPage() {
               <div className="pt-8 flex justify-center">
                 <button
                   onClick={loadMoreFull}
-                  className="group flex items-center gap-2 px-7 py-3 bg-card border border-border rounded-xl font-bold text-sm hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all duration-200"
+                  className="group flex items-center gap-2 px-7 py-3 bg-card border border-border rounded-xl font-bold text-sm hover:border-orange-500/50 hover:bg-orange-500/5 transition-all duration-200"
                 >
-                  <TrendingUp className="h-4 w-4 group-hover:text-indigo-500 transition-colors" />
+                  <TrendingUp className="h-4 w-4 group-hover:text-orange-500 transition-colors" />
                   Load More
                 </button>
               </div>
@@ -258,7 +258,7 @@ export default function RankingsPage() {
           // Default: Top performers / Bottom performers split, per metric.
           <div className="space-y-10">
             <section>
-              <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-indigo-500 mb-4">
+              <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-orange-500 mb-4">
                 <TrendingUp className="h-4 w-4" /> Top Performers
               </h2>
               <div className="space-y-3">
@@ -285,7 +285,7 @@ export default function RankingsPage() {
               <div className="pt-2 flex justify-center">
                 <button
                   onClick={() => setShowFullTable(true)}
-                  className="px-7 py-3 bg-card border border-border rounded-xl font-bold text-sm hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all duration-200"
+                  className="px-7 py-3 bg-card border border-border rounded-xl font-bold text-sm hover:border-orange-500/50 hover:bg-orange-500/5 transition-all duration-200"
                 >
                   Show full table (all {searched.length}) →
                 </button>
@@ -297,7 +297,7 @@ export default function RankingsPage() {
           <div className="space-y-3">
             <button
               onClick={() => setShowFullTable(false)}
-              className="text-xs font-bold text-indigo-500 hover:underline mb-2"
+              className="text-xs font-bold text-orange-500 hover:underline mb-2"
             >
               ← Back to Top / Bottom view
             </button>
@@ -308,9 +308,9 @@ export default function RankingsPage() {
               <div className="pt-8 flex justify-center">
                 <button
                   onClick={loadMoreFull}
-                  className="group flex items-center gap-2 px-7 py-3 bg-card border border-border rounded-xl font-bold text-sm hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all duration-200"
+                  className="group flex items-center gap-2 px-7 py-3 bg-card border border-border rounded-xl font-bold text-sm hover:border-orange-500/50 hover:bg-orange-500/5 transition-all duration-200"
                 >
-                  <TrendingUp className="h-4 w-4 group-hover:text-indigo-500 transition-colors" />
+                  <TrendingUp className="h-4 w-4 group-hover:text-orange-500 transition-colors" />
                   Load More
                 </button>
               </div>

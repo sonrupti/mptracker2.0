@@ -12,7 +12,7 @@ type MetricKey = 'attendance_rate' | 'questions_count' | 'debates_count' | 'bill
 
 const METRICS: { key: MetricKey; label: string; shortLabel: string; icon: React.ComponentType<{ className?: string }>; format: (v: number) => string; color: string }[] = [
   { key: 'attendance_rate', label: 'Avg Attendance', shortLabel: 'Attendance', icon: Clock, format: v => `${v}%`, color: 'text-emerald-500' },
-  { key: 'questions_count', label: 'Avg Questions', shortLabel: 'Questions', icon: MessageSquare, format: v => `${v}`, color: 'text-violet-500' },
+  { key: 'questions_count', label: 'Avg Questions', shortLabel: 'Questions', icon: MessageSquare, format: v => `${v}`, color: 'text-green-600' },
   { key: 'debates_count', label: 'Avg Debates', shortLabel: 'Debates', icon: Activity, format: v => `${v}`, color: 'text-pink-500' },
   { key: 'bills_sponsored', label: 'Avg Bills', shortLabel: 'Bills', icon: FileText, format: v => `${v}`, color: 'text-amber-500' },
 ];
@@ -108,7 +108,7 @@ export default function CitizenPartiesPage() {
               className={cn(
                 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors',
                 metric === m.key
-                  ? 'bg-indigo-500 text-white'
+                  ? 'bg-orange-500 text-white'
                   : 'bg-card text-muted-foreground hover:text-foreground border border-border'
               )}
             >
@@ -136,7 +136,7 @@ export default function CitizenPartiesPage() {
           <select
             value={scope === 'National' ? '' : scope}
             onChange={e => setScope(e.target.value || 'National')}
-            className="h-9 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer"
+            className="h-9 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/40 cursor-pointer"
           >
             <option value="">Or pick a state…</option>
             {states.map(s => <option key={s} value={s}>{s}</option>)}
@@ -163,7 +163,7 @@ export default function CitizenPartiesPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="bg-card border border-border rounded-2xl p-5 space-y-4 hover:border-indigo-500/30 transition-colors"
+                className="bg-card border border-border rounded-2xl p-5 space-y-4 hover:border-orange-500/30 transition-colors"
               >
                 {/* Party name + rank */}
                 <div className="flex items-center justify-between gap-3">
@@ -193,7 +193,7 @@ export default function CitizenPartiesPage() {
                     />
                     {/* median tick */}
                     <div
-                      className="absolute inset-y-0 w-[3px] bg-indigo-500 rounded-full"
+                      className="absolute inset-y-0 w-[3px] bg-orange-500 rounded-full"
                       style={{ left: `${medianPct}%` }}
                     />
                   </div>
@@ -218,7 +218,7 @@ export default function CitizenPartiesPage() {
 
                 <Link
                   href={`/citizen/search?q=${encodeURIComponent(party.name)}`}
-                  className="inline-block text-[10px] text-indigo-500 hover:text-indigo-400 font-bold transition-colors"
+                  className="inline-block text-[10px] text-orange-500 hover:text-orange-400 font-bold transition-colors"
                 >
                   View all {party.name} MPs →
                 </Link>

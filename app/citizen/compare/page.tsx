@@ -59,8 +59,8 @@ function SimpleRadar({ mpA, mpB, maxVals }: { mpA: MP, mpB: MP, maxVals: any }) 
           return <line key={i} x1={center} y1={center} x2={x} y2={y} stroke="currentColor" strokeOpacity={0.1} strokeWidth="1" />;
         })}
         {/* Data Polygons */}
-        <polygon points={aPoints} fill="rgb(99, 102, 241)" fillOpacity={0.3} stroke="rgb(99, 102, 241)" strokeWidth="2" />
-        <polygon points={bPoints} fill="rgb(168, 85, 247)" fillOpacity={0.3} stroke="rgb(168, 85, 247)" strokeWidth="2" />
+        <polygon points={aPoints} fill="rgb(249, 115, 22)" fillOpacity={0.3} stroke="rgb(249, 115, 22)" strokeWidth="2" />
+        <polygon points={bPoints} fill="rgb(22, 163, 74)" fillOpacity={0.3} stroke="rgb(22, 163, 74)" strokeWidth="2" />
         
         {/* Labels */}
         {metrics.map((m, i) => {
@@ -217,7 +217,7 @@ function ComparePageContent() {
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+        <div className="w-8 h-8 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
       </div>
     );
   }
@@ -289,11 +289,11 @@ function ComparePageContent() {
         <p className="text-muted-foreground font-medium">Evaluate two representatives side-by-side.</p>
         
         <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4 bg-card border border-border p-4 rounded-3xl shadow-sm max-w-3xl mx-auto">
-          <MPSearchSelect mps={mps} selectedId={mp1Id} onSelect={setMp1Id} placeholder="Search first MP..." accent="border-indigo-500/50 focus:ring-indigo-500/50" />
+          <MPSearchSelect mps={mps} selectedId={mp1Id} onSelect={setMp1Id} placeholder="Search first MP..." accent="border-orange-500/50 focus:ring-orange-500/50" />
           <div className="w-10 h-10 rounded-full bg-background border border-border flex items-center justify-center shrink-0 shadow-sm z-10 -my-4 md:-mx-4 md:my-0">
             <ArrowRightLeft className="h-4 w-4 text-muted-foreground rotate-90 md:rotate-0" />
           </div>
-          <MPSearchSelect mps={mps} selectedId={mp2Id} onSelect={setMp2Id} placeholder="Search second MP..." accent="border-purple-500/50 focus:ring-purple-500/50" />
+          <MPSearchSelect mps={mps} selectedId={mp2Id} onSelect={setMp2Id} placeholder="Search second MP..." accent="border-green-600/50 focus:ring-green-600/50" />
         </div>
       </header>
 
@@ -321,7 +321,7 @@ function ComparePageContent() {
         key={index}
         className="flex items-start gap-3 rounded-xl border border-border p-4"
       >
-        <div className="mt-1 h-2 w-2 rounded-full bg-indigo-500" />
+        <div className="mt-1 h-2 w-2 rounded-full bg-orange-500" />
         <p className="text-sm">{item}</p>
       </div>
     ))}
@@ -330,8 +330,8 @@ function ComparePageContent() {
           {/* Dual Profile Hero */}
           <section className="grid grid-cols-2 gap-4 md:gap-8">
             {[
-              { mp: mpA, color: 'text-indigo-500', bg: 'bg-indigo-500' },
-              { mp: mpB, color: 'text-purple-500', bg: 'bg-purple-500' }
+              { mp: mpA, color: 'text-orange-500', bg: 'bg-orange-500' },
+              { mp: mpB, color: 'text-green-600', bg: 'bg-green-600' }
             ].map(({ mp, color, bg }, i) => (
               <motion.div key={mp.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}
                 className="bg-card border border-border rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden"
@@ -371,17 +371,17 @@ function ComparePageContent() {
                   return (
                     <div key={metric.key} className="space-y-3">
                       <div className="flex justify-between text-sm font-bold">
-                        <span className={winner === 1 ? 'text-indigo-500' : ''}>{metric.format(valA)}</span>
+                        <span className={winner === 1 ? 'text-orange-500' : ''}>{metric.format(valA)}</span>
                         <span className="text-muted-foreground text-xs uppercase tracking-wider">{metric.label}</span>
-                        <span className={winner === 2 ? 'text-purple-500' : ''}>{metric.format(valB)}</span>
+                        <span className={winner === 2 ? 'text-green-600' : ''}>{metric.format(valB)}</span>
                       </div>
                       <div className="flex items-center gap-2 h-2">
                         <div className="flex-1 bg-border rounded-l-full overflow-hidden flex justify-end h-full">
-                          <motion.div initial={{ width: 0 }} whileInView={{ width: `${pctA}%` }} viewport={{ once: true }} className="bg-indigo-500 h-full" />
+                          <motion.div initial={{ width: 0 }} whileInView={{ width: `${pctA}%` }} viewport={{ once: true }} className="bg-orange-500 h-full" />
                         </div>
                         <div className="w-0.5 h-4 bg-foreground/20 rounded-full shrink-0" />
                         <div className="flex-1 bg-border rounded-r-full overflow-hidden h-full">
-                          <motion.div initial={{ width: 0 }} whileInView={{ width: `${pctB}%` }} viewport={{ once: true }} className="bg-purple-500 h-full" />
+                          <motion.div initial={{ width: 0 }} whileInView={{ width: `${pctB}%` }} viewport={{ once: true }} className="bg-green-600 h-full" />
                         </div>
                       </div>
                     </div>
@@ -393,8 +393,8 @@ function ComparePageContent() {
                 <h3 className="text-sm font-bold text-muted-foreground mb-4">Radar Analysis</h3>
                 <SimpleRadar mpA={mpA} mpB={mpB} maxVals={maxVals} />
                 <div className="flex items-center gap-6 mt-6">
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-indigo-500 opacity-60"/> <span className="text-xs font-semibold">{mpA.name.split(' ')[0]}</span></div>
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-purple-500 opacity-60"/> <span className="text-xs font-semibold">{mpB.name.split(' ')[0]}</span></div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500 opacity-60"/> <span className="text-xs font-semibold">{mpA.name.split(' ')[0]}</span></div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-600 opacity-60"/> <span className="text-xs font-semibold">{mpB.name.split(' ')[0]}</span></div>
                 </div>
               </div>
 
@@ -409,8 +409,8 @@ function ComparePageContent() {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                
                {[
-                 { act: activityA, color: 'bg-indigo-500', mp: mpA },
-                 { act: activityB, color: 'bg-purple-500', mp: mpB }
+                 { act: activityA, color: 'bg-orange-500', mp: mpA },
+                 { act: activityB, color: 'bg-green-600', mp: mpB }
                ].map(({ act, color, mp }) => (
                  <div key={mp.id} className="space-y-6">
                    <h3 className="text-sm font-bold border-b border-border pb-3">{mp.name}'s Activity</h3>
@@ -463,7 +463,7 @@ export default function ComparePage() {
     <Suspense
       fallback={
         <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-          <div className="w-8 h-8 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+          <div className="w-8 h-8 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
         </div>
       }
     >

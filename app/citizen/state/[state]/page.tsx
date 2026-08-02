@@ -17,6 +17,7 @@ import {
 } from '@/components/citizen/CitizenUI';
 
 
+
 function AnimatedBar({ label, val, natVal, pct, natPct, format }: {
   label: string; val: number; natVal: number; pct: number; natPct: number; format: (v: number) => string | number;
 }) {
@@ -27,9 +28,9 @@ function AnimatedBar({ label, val, natVal, pct, natPct, format }: {
       </div>
       <div className="space-y-1.5">
         <div className="flex items-center gap-3">
-          <span className="w-20 text-right text-[11px] font-bold text-indigo-500 shrink-0 truncate">This State</span>
+          <span className="w-20 text-right text-[11px] font-bold text-orange-500 shrink-0 truncate">This State</span>
           <div className="flex-1 h-2 bg-border/60 rounded-full overflow-hidden">
-            <motion.div initial={{ width: 0 }} whileInView={{ width: `${pct}%` }} viewport={{ once: true }} transition={{ duration: 0.9, ease: 'easeOut' }} className="h-full bg-indigo-500 rounded-full" />
+            <motion.div initial={{ width: 0 }} whileInView={{ width: `${pct}%` }} viewport={{ once: true }} transition={{ duration: 0.9, ease: 'easeOut' }} className="h-full bg-orange-500 rounded-full" />
           </div>
           <span className="w-10 text-[11px] font-black text-right tabular-nums shrink-0">{format(val)}</span>
         </div>
@@ -86,7 +87,7 @@ export default function StatePage() {
         <EmptyState
           title={`No data for ${stateName}`}
           description="We couldn't find any MPs for this state. Please check the state name and try again."
-          action={<Link href="/citizen" className="px-6 py-2.5 bg-indigo-500 text-white rounded-xl text-sm font-bold">Back to Home</Link>}
+          action={<Link href="/citizen" className="px-6 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-bold">Back to Home</Link>}
         />
       </div>
     );
@@ -116,7 +117,7 @@ export default function StatePage() {
 
   const kpis = [
     { label: 'Avg Attendance', value: `${stateStats.attendance}%`, nat: `${nationalStats.attendance}%`, icon: Clock, color: 'text-emerald-500' },
-    { label: 'Avg Questions', value: stateStats.questions, nat: nationalStats.questions, icon: MessageSquare, color: 'text-violet-500' },
+    { label: 'Avg Questions', value: stateStats.questions, nat: nationalStats.questions, icon: MessageSquare, color: 'text-green-600' },
     { label: 'Avg Bills', value: stateStats.bills, nat: nationalStats.bills, icon: FileText, color: 'text-amber-500' },
     { label: 'Total MPs', value: stateMps.length, nat: `of 544`, icon: Users, color: 'text-sky-500' },
   ];
@@ -130,8 +131,8 @@ export default function StatePage() {
       {/* Hero */}
       <header className="max-w-6xl mx-auto px-4 mt-8 mb-12">
         <div className="relative bg-card border border-border/60 rounded-[2rem] p-8 md:p-12 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-indigo-500/8 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-purple-500/8 blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-orange-500/8 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-green-600/8 blur-3xl pointer-events-none" />
 
           <div className="relative flex flex-col md:flex-row items-start md:items-end justify-between gap-8">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
@@ -157,7 +158,7 @@ export default function StatePage() {
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {kpis.map((kpi, i) => (
             <motion.div key={kpi.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-              className="p-5 bg-card border border-border/60 rounded-2xl hover:border-indigo-500/30 transition-all duration-200"
+              className="p-5 bg-card border border-border/60 rounded-2xl hover:border-orange-500/30 transition-all duration-200"
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{kpi.label}</span>
@@ -200,11 +201,11 @@ export default function StatePage() {
                 {stateMps.slice(0, 6).map((mp, i) => (
                   <motion.div key={mp.id} initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.04 }}>
                     <Link href={`/citizen/mp/${mp.id}`}
-                      className="flex items-center gap-3 p-4 bg-card border border-border/60 rounded-2xl hover:border-indigo-500/40 hover:shadow-sm transition-all duration-200 group"
+                      className="flex items-center gap-3 p-4 bg-card border border-border/60 rounded-2xl hover:border-orange-500/40 hover:shadow-sm transition-all duration-200 group"
                     >
                       <img src={mp.image_url} alt={mp.name} className="w-12 h-12 rounded-full object-cover shrink-0 border border-border" />
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold truncate group-hover:text-indigo-500 transition-colors">{mp.name}</h3>
+                        <h3 className="text-sm font-bold truncate group-hover:text-orange-500 transition-colors">{mp.name}</h3>
                         <p className="text-[10px] text-muted-foreground truncate mt-0.5">{mp.party} · {mp.constituency}</p>
                       </div>
                       <ScoreBadge score={mp.overall_score} size="sm" />
@@ -232,11 +233,11 @@ export default function StatePage() {
             </section>
 
             {/* CTA */}
-            <section className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
+            <section className="bg-gradient-to-br from-orange-500 to-green-700 rounded-2xl p-6 text-white">
               <h2 className="text-sm font-black uppercase tracking-widest opacity-80 mb-4">Dig Deeper</h2>
               <p className="text-sm text-white/80 mb-5 leading-relaxed">Compare {stateName}'s MPs to find who truly stands out.</p>
               <div className="flex flex-col gap-2.5">
-                <Link href="/citizen/compare" className="text-center px-4 py-2.5 bg-white text-indigo-600 rounded-xl text-sm font-bold hover:opacity-90 active:scale-[0.98] transition-all">
+                <Link href="/citizen/compare" className="text-center px-4 py-2.5 bg-white text-orange-600 rounded-xl text-sm font-bold hover:opacity-90 active:scale-[0.98] transition-all">
                   Compare MPs
                 </Link>
                 <Link href="/citizen/rankings" className="text-center px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold transition-colors">

@@ -102,7 +102,8 @@ export default function ArenaPage() {
     <div className="min-h-screen bg-black text-white p-6 space-y-10">
       {/* MP OF THE WEEK */}
       {mpOfWeek && (
-        <section className="rounded-3xl border border-yellow-500/40 bg-linear-to-r from-yellow-500/10 to-indigo-500/10 p-8">
+        <section className="rounded-3xl border border-yellow-500/40 bg-linear-to-r from-yellow-500/10 to-
+        /10 p-8">
           <div className="flex items-center gap-3 mb-4">
             <Crown className="text-yellow-400" />
             <h1 className="text-3xl font-bold">MP OF THE WEEK</h1>
@@ -225,7 +226,8 @@ export default function ArenaPage() {
           {mps.slice(0, 12).map((mp) => (
             <div
               key={mp.id}
-              className="rounded-2xl border border-indigo-500/30 bg-card p-5"
+              className="rounded-2xl border border-
+              /30 bg-card p-5"
             >
               <div className="text-3xl font-bold text-yellow-400">
                 {mp.overall_score}
@@ -250,7 +252,8 @@ export default function ArenaPage() {
                 {getBadges(mp).map((badge) => (
                   <span
                     key={badge}
-                    className="text-xs bg-indigo-500/20 px-2 py-1 rounded"
+                    className="text-xs bg-
+                    /20 px-2 py-1 rounded"
                   >
                     {badge}
                   </span>
