@@ -14,6 +14,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts';
+import AttendanceSection from '@/components/citizen/attendance/AttendanceSection';
 import { db, MP, MPPerformanceHistory, MPBill, MPQuestion, MPDebate } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import {
@@ -30,6 +31,7 @@ export default function MPProfilePage() {
   const [history, setHistory] = useState<MPPerformanceHistory[]>([]);
   const [comparison, setComparison] = useState<any>(null);
   const [related, setRelated] = useState<MP[]>([]);
+  const [allMps, setAllMps] = useState<MP[]>([]);
   const [questions, setQuestions] = useState<MPQuestion[]>([]);
   const [debates, setDebates] = useState<MPDebate[]>([]);
   const [bills, setBills] = useState<MPBill[]>([]);
@@ -40,7 +42,7 @@ const [mpladsExpenditure, setMPLADSExpenditure] = useState<any[]>([]);
 const [mpladsLoading, setMPLADSLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState<'overview'|'attendance'|'questions'|'debates'|'bills'|'mplad'|'ai'>('overview');
   
   // Prevent Recharts server hydration mismatches
   const [mounted, setMounted] = useState(false);
@@ -76,6 +78,7 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
       setComparison(compData);
 
       if (mpsData && Array.isArray(mpsData)) {
+        setAllMps(mpsData);
         setRelated(
           mpsData
             .filter(m => m.state === mpData.state && m.id !== mpData.id)
@@ -347,8 +350,14 @@ color: "text-orange-500",
 
       {/* Tab navigation */}
       <div className="max-w-5xl mx-auto px-4 mb-8">
-        <Tabs tabs={TABS} active={tab} onChange={setTab} />
+        <Tabs tabs={TABS} active={tab} onChange={(id: string) => setTab(id as any)} />
       </div>
+
+      {tab === 'attendance' && (
+        <section className="rounded-2xl">
+          <AttendanceSection mp={mp} history={history} comparison={comparison} allMps={allMps} />
+        </section>
+      )}
 
       <div className="max-w-5xl mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -393,6 +402,8 @@ color: "text-orange-500",
                   </section>
                 )}
 
+                  
+
                 <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
                   <h2 className="text-lg font-black mb-6">Recent Activity</h2>
                   {debates.length === 0 && questions.length === 0 ? (
@@ -418,61 +429,7 @@ color: "text-orange-500",
                 </section>
               </>
             )}
-
-            {tab === 'attendance' && (
-              <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-                <h2 className="text-lg font-black mb-2">Attendance</h2>
-                <div className="flex items-end gap-3 mb-6">
-                  <span className="text-4xl font-black tabular-nums">{mp.attendance_rate}%</span>
-                  {comparison && <ComparisonChip value={mp.attendance_rate} benchmark={comparison.india.attendance_rate} />}
-                </div>
-
-                {comparison && (
-                  <div className="grid grid-cols-3 gap-3 mb-8">
-                    <div className="p-4 bg-background rounded-xl border border-border/60 text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">National Average</p>
-                      <p className="text-xl font-black">{comparison.india.attendance_rate}%</p>
-                    </div>
-                    <div className="p-4 bg-background rounded-xl border border-border/60 text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">State Average</p>
-                      <p className="text-xl font-black">{comparison.state.attendance_rate}%</p>
-                    </div>
-                    <div className="p-4 bg-background rounded-xl border border-border/60 text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Party Average</p>
-                      <p className="text-xl font-black">{comparison.party.attendance_rate}%</p>
-                    </div>
-                  </div>
-                )}
-
-                {comparison && (
-                  <BenchmarkRow
-                    label="This MP"
-                    value={mp.attendance_rate}
-                    max={100}
-                    format={v => `${v}%`}
-                    benchmarks={[
-                      { label: 'Party avg', value: comparison.party.attendance_rate, color: 'bg-green-500/80' },
-                      { label: 'State avg', value: comparison.state.attendance_rate, color: 'bg-zinc-400/70' },
-                      { label: 'National avg', value: comparison.india.attendance_rate, color: 'bg-zinc-500/50' },
-                    ]}
-                  />
-                )}
-
-                {mounted && history.length > 0 && (
-                  <div className="h-48 mt-8 w-full min-w-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={history} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                        <XAxis dataKey="year" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                        <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-                        <Line type="monotone" dataKey="attendance_rate" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 4, fill: '#22c55e' }} name="Attendance %" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </section>
-            )}
+              
 
             {tab === 'questions' && (
               <>
@@ -699,6 +656,7 @@ color: "text-orange-500",
           </div>
         </div>
       </div>
-    </div>
-  );
+        </div>
+
+      );
 }

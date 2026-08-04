@@ -35,6 +35,7 @@ import {
   Bar,
   Cell
 } from 'recharts';
+import AttendanceAnalytics from '@/components/attendance/AttendanceAnalytics';
 import { db, MP, MPPerformanceHistory, MPTopic, MPBill, MPQuestion, MPDebate } from '@/lib/supabase';
 type MpComparison = Awaited<ReturnType<typeof db.getMpComparison>>;
 import { cn } from '@/lib/utils';
@@ -394,65 +395,7 @@ const activeSessions = new Set(
        {/* KPI Cards Grid */}
 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-  {/* Attendance */}
-  <div className="glow-card bg-card border border-zinc-900 p-5 rounded-xl flex flex-col justify-between">
-    <div className="flex items-center justify-between">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        Attendance
-      </span>
-      <Clock className="h-4 w-4 text-emerald-400" />
-    </div>
-
-    <div className="mt-4">
-      <h3 className="text-3xl font-bold text-foreground">
-        {mp.attendance_rate}%
-      </h3>
-
-      {comparison && (
-        <div className="mt-2 space-y-1 text-[10px]">
-
-          <p
-            className={cn(
-              "font-semibold",
-              comparison.mp.attendance_rate >= comparison.state.attendance_rate
-                ? "text-emerald-400"
-                : "text-rose-400"
-            )}
-          >
-            {comparison.mp.attendance_rate >= comparison.state.attendance_rate
-              ? `▲ ${Math.abs(
-                  comparison.mp.attendance_rate -
-                    comparison.state.attendance_rate
-                ).toFixed(1)}% vs State`
-              : `▼ ${Math.abs(
-                  comparison.mp.attendance_rate -
-                    comparison.state.attendance_rate
-                ).toFixed(1)}% vs State`}
-          </p>
-
-          <p
-            className={cn(
-              "font-semibold",
-              comparison.mp.attendance_rate >= comparison.india.attendance_rate
-                ? "text-emerald-400"
-                : "text-rose-400"
-            )}
-          >
-            {comparison.mp.attendance_rate >= comparison.india.attendance_rate
-              ? `▲ ${Math.abs(
-                  comparison.mp.attendance_rate -
-                    comparison.india.attendance_rate
-                ).toFixed(1)}% vs India`
-              : `▼ ${Math.abs(
-                  comparison.mp.attendance_rate -
-                    comparison.india.attendance_rate
-                ).toFixed(1)}% vs India`}
-          </p>
-
-        </div>
-      )}
-    </div>
-  </div>
+  {/* AttendanceAnalytics inserted below */}
 
   {/* Questions */}
   <Link href={`/mps/${id}/questions`}>
@@ -620,6 +563,13 @@ const activeSessions = new Set(
   </Link>
 
 </div>
+
+      {/* Redesigned Attendance Analytics (replaces small KPI card) */}
+      {comparison && (
+        <div className="pt-2">
+          <AttendanceAnalytics mp={mp} history={history} allMps={allMps} comparison={comparison} />
+        </div>
+      )}
 
       {/* State vs India Comparison */}
       {comparison && (

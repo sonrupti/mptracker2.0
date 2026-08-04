@@ -455,6 +455,43 @@ const regions = REGION_ALIASES[normalizedRegion] || [normalizedRegion];
   },
 
   /**
+   * Nationwide average attendance_rate per year, across all MPs'
+   * performance history rows. Used to draw the "national avg" dashed
+   * line alongside a single MP's own trend line.
+   */
+  async getNationalHistoryTrend(): Promise<{ year: number; avg_attendance_rate: number }[]> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('mp_performance_history')
+          .select('year, attendance_rate');
+
+        if (!error && data) {
+          const byYear: Record<number, number[]> = {};
+          (data as { year: number; attendance_rate: number }[]).forEach(row => {
+            byYear[row.year] = byYear[row.year] || [];
+            byYear[row.year].push(row.attendance_rate);
+          });
+
+          return Object.entries(byYear)
+            .map(([year, vals]) => ({
+              year: Number(year),
+              avg_attendance_rate: Number(
+                (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
+              ),
+            }))
+            .sort((a, b) => a.year - b.year);
+        }
+        console.error('Supabase getNationalHistoryTrend error, falling back to empty:', error);
+      } catch (err) {
+        console.error('Supabase query error, falling back to empty:', err);
+      }
+    }
+
+    return [];
+  },
+
+  /**
    * Get an MP's topic breakdown scores
    */
   async getMpTopics(mpId: string) {

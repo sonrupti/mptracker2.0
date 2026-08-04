@@ -8,7 +8,7 @@ import MPLADSCard from '@/components/citizen/MPLADSCard';
 import MPLADSDashboard from "@/components/mplads/MPLADSDashboard";
 import {
   Clock, MessageSquare, FileText, Activity, MapPin, TrendingUp, Award, Calendar,
-  LayoutGrid, CheckCircle2, HelpCircle, Sparkles, ExternalLink, Wallet,
+  LayoutGrid, Sparkles, ExternalLink, Wallet,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -18,8 +18,9 @@ import { db, MP, MPPerformanceHistory, MPBill, MPQuestion, MPDebate } from '@/li
 import { cn } from '@/lib/utils';
 import {
   PageLoader, ErrorBanner, BackButton, ScoreBadge, PartyLogo,
-  Tabs, BenchmarkRow, ComparisonChip,
+  Tabs,
 } from '@/components/citizen/CitizenUI';
+import AttendanceDetail from '@/components/mp/AttendanceDetail';
 
 export default function MPProfilePage() {
   const params = useParams();
@@ -30,6 +31,8 @@ export default function MPProfilePage() {
   const [history, setHistory] = useState<MPPerformanceHistory[]>([]);
   const [comparison, setComparison] = useState<any>(null);
   const [related, setRelated] = useState<MP[]>([]);
+  const [allMps, setAllMps] = useState<MP[]>([]);
+  const [nationalTrend, setNationalTrend] = useState<{ year: number; avg_attendance_rate: number }[]>([]);
   const [questions, setQuestions] = useState<MPQuestion[]>([]);
   const [debates, setDebates] = useState<MPDebate[]>([]);
   const [bills, setBills] = useState<MPBill[]>([]);
@@ -41,6 +44,7 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [tab, setTab] = useState('overview');
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   
   // Prevent Recharts server hydration mismatches
   const [mounted, setMounted] = useState(false);
@@ -55,6 +59,7 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
   setLoading(true);
   setError(false);
   setTab('overview');
+  setSelectedTopic(null);
 
   Promise.all([
     db.getMpById(id),
@@ -64,8 +69,9 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
     db.getMpQuestions(id),
     db.getMpDebates(id),
     db.getMpBills(id),
+    db.getNationalHistoryTrend(),
   ])
-    .then(async ([mpData, historyData, compData, mpsData, questionsData, debatesData, billsData]) => {
+    .then(async ([mpData, historyData, compData, mpsData, questionsData, debatesData, billsData, nationalTrendData]) => {
       if (!mpData) {
         setError(true);
         return;
@@ -74,8 +80,10 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
       setMp(mpData);
       setHistory(historyData || []);
       setComparison(compData);
+      setNationalTrend(nationalTrendData || []);
 
       if (mpsData && Array.isArray(mpsData)) {
+        setAllMps(mpsData);
         setRelated(
           mpsData
             .filter(m => m.state === mpData.state && m.id !== mpData.id)
@@ -129,6 +137,13 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
     () => questions.filter(q => q.response_text || q.full_answer || q.answer_date).length,
     [questions]
   );
+
+  const filteredQuestions = useMemo(() => {
+    if (!selectedTopic) return questions;
+    return questions.filter(
+      q => q.category === selectedTopic || (q.keywords || []).includes(selectedTopic)
+    );
+  }, [questions, selectedTopic]);
 
   if (loading) return <PageLoader />;
   if (error || !mp) return <ErrorBanner message="This MP profile could not be loaded." onRetry={() => router.refresh()} />;
@@ -419,119 +434,138 @@ color: "text-orange-500",
               </>
             )}
 
-            {tab === 'attendance' && (
-              <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-                <h2 className="text-lg font-black mb-2">Attendance</h2>
-                <div className="flex items-end gap-3 mb-6">
-                  <span className="text-4xl font-black tabular-nums">{mp.attendance_rate}%</span>
-                  {comparison && <ComparisonChip value={mp.attendance_rate} benchmark={comparison.india.attendance_rate} />}
-                </div>
-
-                {comparison && (
-                  <div className="grid grid-cols-3 gap-3 mb-8">
-                    <div className="p-4 bg-background rounded-xl border border-border/60 text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">National Average</p>
-                      <p className="text-xl font-black">{comparison.india.attendance_rate}%</p>
-                    </div>
-                    <div className="p-4 bg-background rounded-xl border border-border/60 text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">State Average</p>
-                      <p className="text-xl font-black">{comparison.state.attendance_rate}%</p>
-                    </div>
-                    <div className="p-4 bg-background rounded-xl border border-border/60 text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Party Average</p>
-                      <p className="text-xl font-black">{comparison.party.attendance_rate}%</p>
-                    </div>
-                  </div>
-                )}
-
-                {comparison && (
-                  <BenchmarkRow
-                    label="This MP"
-                    value={mp.attendance_rate}
-                    max={100}
-                    format={v => `${v}%`}
-                    benchmarks={[
-                      { label: 'Party avg', value: comparison.party.attendance_rate, color: 'bg-green-500/80' },
-                      { label: 'State avg', value: comparison.state.attendance_rate, color: 'bg-zinc-400/70' },
-                      { label: 'National avg', value: comparison.india.attendance_rate, color: 'bg-zinc-500/50' },
-                    ]}
-                  />
-                )}
-
-                {mounted && history.length > 0 && (
-                  <div className="h-48 mt-8 w-full min-w-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={history} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                        <XAxis dataKey="year" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} domain={[0, 100]} />
-                        <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-                        <Line type="monotone" dataKey="attendance_rate" stroke="#22c55e" strokeWidth={2.5} dot={{ r: 4, fill: '#22c55e' }} name="Attendance %" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </section>
+            {tab === 'attendance' && mounted && (
+              <AttendanceDetail
+                mp={mp}
+                comparison={comparison}
+                allMps={allMps}
+                history={history}
+                nationalTrend={nationalTrend}
+              />
             )}
 
             {tab === 'questions' && (
               <>
-                <section className="grid grid-cols-2 gap-3 md:gap-4">
-                  <div className="p-5 bg-card border border-border/60 rounded-2xl text-center">
-                    <HelpCircle className="w-4 h-4 text-green-600 mx-auto mb-2" />
-                    <span className="text-2xl font-black block">{mp.questions_count}</span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Questions Asked</span>
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                  {/* "BY SCOPE" in the wireframe -- we don't have a scope
+                      field on MPQuestion (only ministry/category), so this
+                      shows the ministry breakdown instead and is labeled
+                      honestly. */}
+                  <div className="bg-card border border-border/60 rounded-2xl p-5 md:p-6">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                      By Ministry
+                    </p>
+                    {mounted && ministryBreakdown.length > 0 ? (
+                      <div className="h-32 w-full min-w-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={ministryBreakdown} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                            <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} interval={0} angle={-15} textAnchor="end" height={40} />
+                            <YAxis hide />
+                            <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
+                            <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground py-8 text-center">No ministry data yet.</p>
+                    )}
                   </div>
-                  <div className="p-5 bg-card border border-border/60 rounded-2xl text-center">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto mb-2" />
-                    <span className="text-2xl font-black block">{answeredCount}</span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Answered</span>
+
+                  <div className="bg-card border border-border/60 rounded-2xl p-5 md:p-6">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                      Answered vs Pending
+                    </p>
+                    <span className="text-4xl font-black tabular-nums block">{answeredCount}</span>
+                    <span className="text-sm font-semibold text-muted-foreground">answered</span>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      {Math.max(mp.questions_count - answeredCount, 0)} pending
+                    </p>
                   </div>
                 </section>
 
-                {mounted && ministryBreakdown.length > 0 && (
-                  <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-                    <h2 className="text-lg font-black mb-6">Top Ministries</h2>
-                    <div className="h-56 w-full min-w-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={ministryBreakdown} layout="vertical" margin={{ left: 10, right: 20 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                          <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                          <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-                          <Bar dataKey="count" fill="#f97316" radius={[0, 6, 6, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </section>
-                )}
-
                 {popularTopics.length > 0 && (
                   <section className="bg-card border border-border/60 rounded-2xl p-6">
-                    <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4">Popular Topics</h2>
+                    <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
+                      Filter by Topic
+                    </h2>
                     <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setSelectedTopic(null)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors',
+                          selectedTopic === null
+                            ? 'bg-orange-500 text-white border-orange-500'
+                            : 'bg-foreground/5 border-border/60 hover:border-orange-500/60'
+                        )}
+                      >
+                        All
+                      </button>
                       {popularTopics.map(t => (
-                        <span key={t} className="px-3 py-1.5 rounded-lg bg-foreground/5 border border-border/60 text-xs font-semibold">{t}</span>
+                        <button
+                          key={t}
+                          onClick={() => setSelectedTopic(t === selectedTopic ? null : t)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors',
+                            selectedTopic === t
+                              ? 'bg-orange-500 text-white border-orange-500'
+                              : 'bg-foreground/5 border-border/60 hover:border-orange-500/60'
+                          )}
+                        >
+                          {t}
+                        </button>
                       ))}
                     </div>
                   </section>
                 )}
 
                 <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-                  <h2 className="text-lg font-black mb-6">Recent Questions</h2>
-                  {questions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No questions on record for this MP.</p>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-black">Questions</h2>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {filteredQuestions.length} question{filteredQuestions.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+
+                  {filteredQuestions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedTopic ? `No questions found for "${selectedTopic}".` : 'No questions on record for this MP.'}
+                    </p>
                   ) : (
                     <div className="space-y-3">
-                      {questions.slice(0, 8).map(q => (
-                        <div key={q.id} className="p-4 bg-background rounded-xl border border-border/60">
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider">{q.ministry_name || q.ministry || 'General'}</span>
-                            <span className="text-[10px] font-medium text-muted-foreground">{q.date}</span>
+                      {filteredQuestions.slice(0, 8).map(q => {
+                        const detailUrl = q.source_url || q.prs_url || q.official_url || q.link;
+                        return (
+                          <div key={q.id} className="p-4 bg-background rounded-xl border border-border/60">
+                            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-bold uppercase tracking-wider">
+                                  {q.category || 'General'}
+                                </span>
+                                {(q.ministry_name || q.ministry) && (
+                                  <span className="px-2 py-0.5 rounded-full bg-foreground/5 border border-border/60 text-[10px] font-semibold text-muted-foreground">
+                                    {q.ministry_name || q.ministry}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] font-medium text-muted-foreground shrink-0">{q.date}</span>
+                            </div>
+
+                            <p className="text-sm font-medium leading-snug line-clamp-2">{q.question_text}</p>
+
+                            {detailUrl && (
+                              <a
+                                href={detailUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs font-bold text-orange-500 hover:text-orange-400 mt-3"
+                              >
+                                Read full question &amp; ministry reply
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
                           </div>
-                          <p className="text-sm font-medium leading-snug line-clamp-2">{q.question_text}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </section>
