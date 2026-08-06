@@ -65,14 +65,15 @@ export default function SimpleHomePage() {
     ? allMps.filter(m => fuzzyMatch(m.name, query) || fuzzyMatch(m.constituency, query) || fuzzyMatch(m.state, query)).slice(0, 6)
     : [];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (results.length === 1) {
-      router.push(`/citizen/simple/mp/${results[0].id}`);
-    } else if (query.trim()) {
-      router.push(`/citizen/search?q=${encodeURIComponent(query.trim())}`);
-    }
-  };
+ const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (results.length === 1) {
+    router.push(`/citizen/mp/${results[0].id}`);
+  } else if (query.trim()) {
+    router.push(`/citizen/search?q=${encodeURIComponent(query.trim())}`);
+  }
+};
 
   // Browser geolocation can give us coordinates, but we don't have a
   // coordinate → constituency lookup yet, so this guides the person to the
@@ -140,7 +141,7 @@ export default function SimpleHomePage() {
                 {results.map(mp => (
                   <Link
                     key={mp.id}
-                    href={`/citizen/simple/mp/${mp.id}`}
+                   href={`/citizen/mp/${mp.id}`}
                     className="flex items-center gap-3 p-3 hover:bg-background transition-colors border-b border-border/50 last:border-0"
                   >
                     <img src={mp.image_url} alt={mp.name} className="w-9 h-9 rounded-full object-cover shrink-0 border border-border" />
@@ -156,7 +157,31 @@ export default function SimpleHomePage() {
           </AnimatePresence>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 mt-4">
+      <div
+  className={`transition-all duration-200 ${
+    open && results.length > 0 ? "mt-80" : "mt-4"
+  }`}
+>
+  <div className="flex flex-col sm:flex-row items-center gap-3">
+  
+  </div>
+
+  {locateMsg && (
+    <p className="text-xs text-muted-foreground mt-2 text-center sm:text-left">
+      {locateMsg}
+    </p>
+  )}
+
+  <div className="border-t border-dashed border-border/60 my-8" />
+
+  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 text-center sm:text-left">
+    Or explore
+  </p>
+
+  <div className="grid grid-cols-3 gap-3">
+  
+  </div>
+
           <Link
             href="/citizen/simple/find"
             className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 px-6 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 active:scale-[0.98] transition-all"

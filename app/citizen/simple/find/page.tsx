@@ -116,11 +116,11 @@ export default function FindMyMpPage() {
 
                 <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                   {constituencyMps.map(mp => (
-                    <Link
-                      key={mp.id}
-                      href={`/citizen/simple/mp/${mp.id}`}
-                      className="flex items-center gap-3 p-3 bg-background rounded-xl border border-border/60 hover:border-orange-500/40 transition-colors group"
-                    >
+                  <Link
+  key={mp.id}
+  href={`/citizen/mp/${mp.id}`}
+  className="flex items-center gap-3 p-3 bg-background rounded-xl border border-border/60 hover:border-orange-500/40 transition-colors group"
+>
                       <img src={mp.image_url} alt={mp.name} className="w-10 h-10 rounded-full object-cover border border-border shrink-0" />
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-bold truncate group-hover:text-orange-500 transition-colors">{mp.constituency}</h4>

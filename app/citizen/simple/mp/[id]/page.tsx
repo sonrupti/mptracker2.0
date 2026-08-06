@@ -719,17 +719,7 @@ color: "text-orange-500",
               </section>
             )}
 
-            <section className="bg-gradient-to-br from-orange-500 to-green-700 rounded-2xl p-6 text-white">
-              <h2 className="text-sm font-black uppercase tracking-widest opacity-80 mb-4">Actions</h2>
-              <div className="flex flex-col gap-2.5">
-                <Link href={`/citizen/compare?mp1=${mp.id}`} className="w-full text-center px-4 py-2.5 bg-white text-orange-600 rounded-xl text-sm font-bold hover:opacity-90 active:scale-[0.98] transition-all">
-                  Compare with another MP
-                </Link>
-                <Link href={`/citizen/state/${encodeURIComponent(mp.state)}`} className="w-full text-center px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold transition-colors">
-                  Explore {mp.state}
-                </Link>
-              </div>
-            </section>
+      
           </div>
         </div>
       </div>
