@@ -12,13 +12,16 @@ interface Props {
   summary: Summary;
 }
 
-const money = (amount: number) =>
-  new Intl.NumberFormat('en-IN', {
+const money = (amount: number) => {
+  const compact = amount > 10000000; // switch to ₹1.2Cr-style notation above 1 crore
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
-    maximumFractionDigits: 1,
-    notation: amount > 10000000 ? 'compact' : 'standard',
+    notation: compact ? 'compact' : 'standard',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: compact ? 1 : 0,
   }).format(amount);
+};
 
 /**
  * Three-card summary: Sanctioned / Utilised / Unspent.
@@ -44,15 +47,19 @@ export default function MPLADSSummaryCards({ summary }: Props) {
             key={card.title}
             className={
               card.accent
-                ? 'rounded-2xl border-2 border-amber-500/50 bg-amber-500/5 p-6'
-                : 'rounded-2xl border border-border bg-card p-6'
+                ? 'rounded-2xl border-2 border-amber-500/50 bg-amber-500/5 p-6 overflow-hidden'
+                : 'rounded-2xl border border-border bg-card p-6 overflow-hidden'
             }
           >
             <div className="flex items-center justify-between mb-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{card.title}</p>
               <Icon className={card.accent ? 'text-amber-500' : 'text-muted-foreground'} size={16} />
             </div>
-            <h3 className={`text-3xl font-black leading-none ${card.accent ? 'text-amber-500' : 'text-foreground'}`}>
+            <h3
+              className={`font-black leading-none truncate ${card.accent ? 'text-amber-500' : 'text-foreground'}`}
+              style={{ fontSize: 'clamp(1.05rem, 3.4vw, 1.875rem)' }}
+              title={card.value}
+            >
               {card.value}
             </h3>
           </div>
