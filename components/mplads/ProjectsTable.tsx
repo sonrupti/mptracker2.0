@@ -38,6 +38,20 @@ function getProjectTitle(description: string, maxLength = 60): string {
     : candidate.trim();
 }
 
+function StatusBadge({ status }: { status: 'Completed' | 'Ongoing' }) {
+  return status === 'Completed' ? (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 text-xs font-bold whitespace-nowrap">
+      <CheckCircle2 size={14} />
+      Completed
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1 text-xs font-bold whitespace-nowrap">
+      <Clock3 size={14} />
+      Ongoing
+    </span>
+  );
+}
+
 export default function ProjectsTable({
   recommended,
   completed,
@@ -57,8 +71,8 @@ export default function ProjectsTable({
         ...item,
 
         status: completedIds.has(item.work_id)
-          ? 'Completed'
-          : 'Ongoing',
+          ? 'Completed' as const
+          : 'Ongoing' as const,
       }))
       .filter((item) =>
         item.work_description
@@ -69,13 +83,13 @@ export default function ProjectsTable({
   }, [recommended, completedIds, search]);
 
   return (
-    <div className="bg-card border border-border rounded-3xl p-8">
+    <div className="bg-card border border-border rounded-3xl p-4 sm:p-8">
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 sm:mb-8">
 
         <div>
 
-          <h2 className="text-2xl font-black">
+          <h2 className="text-xl sm:text-2xl font-black">
             MPLADS Projects
           </h2>
 
@@ -96,14 +110,15 @@ export default function ProjectsTable({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects..."
-            className="pl-11 h-11 rounded-xl border border-border bg-background px-4 w-72 outline-none focus:ring-2 focus:ring-indigo-500"
+            className="pl-11 h-11 rounded-xl border border-border bg-background px-4 w-full lg:w-72 outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
         </div>
 
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border">
+      {/* Desktop / tablet: full table */}
+      <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
 
         <table className="w-full table-fixed">
 
@@ -206,27 +221,7 @@ export default function ProjectsTable({
 
                 <td className="p-4 align-top">
 
-                  {project.status === 'Completed' ? (
-
-                    <span className="inline-flex items-center gap-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 text-xs font-bold">
-
-                      <CheckCircle2 size={14} />
-
-                      Completed
-
-                    </span>
-
-                  ) : (
-
-                    <span className="inline-flex items-center gap-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1 text-xs font-bold">
-
-                      <Clock3 size={14} />
-
-                      Ongoing
-
-                    </span>
-
-                  )}
+                  <StatusBadge status={project.status} />
 
                 </td>
 
@@ -237,6 +232,49 @@ export default function ProjectsTable({
           </tbody>
 
         </table>
+
+      </div>
+
+      {/* Mobile: card list instead of a squeezed table */}
+      <div className="md:hidden space-y-3">
+
+        {projects.length === 0 && (
+          <p className="text-center py-12 text-muted-foreground">
+            No projects found.
+          </p>
+        )}
+
+        {projects.map((project) => (
+          <div
+            key={project.id}
+            className="rounded-2xl border border-border p-4"
+          >
+
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h3 className="font-semibold text-sm leading-snug" title={project.work_description}>
+                {getProjectTitle(project.work_description)}
+              </h3>
+              <StatusBadge status={project.status} />
+            </div>
+
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+              {project.work_description}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+              <span className="font-bold">
+                ₹{project.recommended_amount_rupees.toLocaleString()}
+              </span>
+              <span className="text-muted-foreground">
+                {project.category}
+              </span>
+              <span className="text-muted-foreground">
+                {new Date(project.recommendation_date).toLocaleDateString()}
+              </span>
+            </div>
+
+          </div>
+        ))}
 
       </div>
 
