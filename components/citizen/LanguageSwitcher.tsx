@@ -93,9 +93,10 @@ export default function LanguageSwitcher({
       {open && (
         <div
           className={cn(
-            'absolute right-0 z-[60] w-64 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl p-2',
+            'absolute right-0 z-[999] w-64 rounded-xl border border-border shadow-xl p-2',
             direction === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'
           )}
+          style={{ backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
         >
           <button
             onClick={() => setLanguage('en')}

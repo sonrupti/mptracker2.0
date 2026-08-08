@@ -87,7 +87,7 @@ export default function CitizenNavbar() {
       {/* Desktop + Tablet Navbar */}
       <nav
         className={cn(
-          'sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl transition-all duration-300',
+          'sticky top-0 z-50 isolate w-full border-b bg-background/80 backdrop-blur-xl transition-all duration-300',
           scrolled
             ? 'border-border/60 shadow-sm'
             : 'border-transparent'
@@ -266,7 +266,7 @@ export default function CitizenNavbar() {
         "
       >
 
-        <div className="grid grid-cols-7 h-16">
+        <div className="grid grid-cols-8 h-16">
 
           {
             NAV_ITEMS.map((item)=>{
@@ -279,7 +279,7 @@ export default function CitizenNavbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex flex-col items-center justify-center gap-1',
+                    'flex flex-col items-center justify-center gap-1 px-0.5 min-w-0',
                     active
                       ? 'text-orange-500'
                       : 'text-muted-foreground'
@@ -288,16 +288,19 @@ export default function CitizenNavbar() {
 
                   <item.icon
                     className={cn(
-                      'h-5 w-5',
+                      'h-[18px] w-[18px] shrink-0',
                       active && 'scale-110'
                     )}
                   />
 
                   <span
                     className="
-                      text-[9px]
+                      text-[8px]
                       font-bold
                       uppercase
+                      leading-none
+                      truncate
+                      max-w-full
                     "
                   >
                     {item.name}
