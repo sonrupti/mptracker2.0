@@ -14,7 +14,8 @@ import {
   Info,
   Vote,
   Landmark,
-  BarChart2
+  BarChart2,
+  ListFilter
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ import GoogleTranslate from '@/components/GoogleTranslate';
 
 const NAV_ITEMS = [
   { name: 'Home', href: '/citizen/simple', icon: Home },
+  { name: 'Activity', href: '/citizen/activity', icon: ListFilter },
   { name: 'Rankings', href: '/citizen/rankings', icon: TrendingUp },
   { name: 'Parties', href: '/citizen/parties', icon: Landmark },
   { name: 'Compare', href: '/citizen/compare', icon: ArrowRightLeft },

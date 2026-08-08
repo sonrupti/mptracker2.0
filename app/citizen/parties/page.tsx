@@ -1,20 +1,36 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { Clock, MessageSquare, Activity, FileText, Users } from 'lucide-react';
-import { db, MP } from '@/lib/supabase';
+import { ChevronDown, Square, CheckSquare } from 'lucide-react';
+import { db, MP, MPLADTotals } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
-import { SectionHeader, StatCardSkeleton, PartyLogo } from '@/components/citizen/CitizenUI';
+import { SectionHeader, StatCardSkeleton } from '@/components/citizen/CitizenUI';
 
-type MetricKey = 'attendance_rate' | 'questions_count' | 'debates_count' | 'bills_sponsored';
+type MetricKey = 'attendance_rate' | 'questions_count' | 'debates_count' | 'bills_sponsored' | 'mplad_utilization_pct';
+type MPWithMplad = MP & { mplad_utilization_pct: number };
 
-const METRICS: { key: MetricKey; label: string; shortLabel: string; icon: React.ComponentType<{ className?: string }>; format: (v: number) => string; color: string }[] = [
-  { key: 'attendance_rate', label: 'Avg Attendance', shortLabel: 'Attendance', icon: Clock, format: v => `${v}%`, color: 'text-emerald-500' },
-  { key: 'questions_count', label: 'Avg Questions', shortLabel: 'Questions', icon: MessageSquare, format: v => `${v}`, color: 'text-green-600' },
-  { key: 'debates_count', label: 'Avg Debates', shortLabel: 'Debates', icon: Activity, format: v => `${v}`, color: 'text-pink-500' },
-  { key: 'bills_sponsored', label: 'Avg Bills', shortLabel: 'Bills', icon: FileText, format: v => `${v}`, color: 'text-amber-500' },
+const METRICS: { key: MetricKey; label: string; shortLabel: string; format: (v: number) => string }[] = [
+  { key: 'attendance_rate', label: 'Avg attendance', shortLabel: 'Attendance', format: v => `${v}%` },
+  { key: 'questions_count', label: 'Avg questions', shortLabel: 'Questions', format: v => `${v}` },
+  { key: 'debates_count', label: 'Avg debates', shortLabel: 'Debates', format: v => `${v}` },
+  { key: 'bills_sponsored', label: 'Avg bills', shortLabel: 'Bills', format: v => `${v}` },
+];
+
+const MPLAD_METRIC = {
+  key: 'mplad_utilization_pct' as const, label: 'MPLAD utilised', shortLabel: 'MPLAD', format: (v: number) => `${v}%`,
+};
+
+// Purely visual, rotating palette so rows are easy to tell apart at a glance.
+// Deliberately not tied to any party's real-world colors — see the "no ideological ranking" note below.
+const BAR_PALETTE = [
+  { track: 'bg-sky-100', fill: 'bg-sky-300/80' },
+  { track: 'bg-amber-100', fill: 'bg-amber-300/80' },
+  { track: 'bg-emerald-100', fill: 'bg-emerald-300/80' },
+  { track: 'bg-violet-100', fill: 'bg-violet-300/80' },
+  { track: 'bg-rose-100', fill: 'bg-rose-300/80' },
+  { track: 'bg-slate-100', fill: 'bg-slate-300/80' },
 ];
 
 interface PartySpread {
@@ -35,25 +51,36 @@ function median(values: number[]): number {
 }
 
 export default function CitizenPartiesPage() {
+  const router = useRouter();
+  const stateSelectRef = useRef<HTMLSelectElement>(null);
+
   const [loading, setLoading] = useState(true);
-  const [allMps, setAllMps] = useState<MP[]>([]);
+  const [allMps, setAllMps] = useState<MPWithMplad[]>([]);
+  const [mpladAvailable, setMpladAvailable] = useState(false);
   const [metric, setMetric] = useState<MetricKey>('attendance_rate');
   const [scope, setScope] = useState<string>('National');
+  const [selectedParty, setSelectedParty] = useState<string | null>(null);
 
   useEffect(() => {
-    db.getMps()
-      .then(setAllMps)
+    Promise.all([db.getMps(), db.getMpladTotals()])
+      .then(([mps, totals]) => {
+        const byMpId = new Map<string, MPLADTotals>(totals.map(t => [t.mp_id, t]));
+        setAllMps(mps.map(mp => ({ ...mp, mplad_utilization_pct: byMpId.get(mp.id)?.utilization_pct ?? 0 })));
+        setMpladAvailable(totals.length > 0);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
+  const metrics = useMemo(() => (mpladAvailable ? [...METRICS, MPLAD_METRIC] : METRICS), [mpladAvailable]);
+
   const states = useMemo(() => Array.from(new Set(allMps.map(m => m.state))).sort(), [allMps]);
-  const activeMetric = METRICS.find(m => m.key === metric)!;
+  const activeMetric = metrics.find(m => m.key === metric)!;
 
   const parties: PartySpread[] = useMemo(() => {
     const scoped = scope === 'National' ? allMps : allMps.filter(m => m.state === scope);
 
-    const byParty: Record<string, MP[]> = {};
+    const byParty: Record<string, MPWithMplad[]> = {};
     scoped.forEach(mp => {
       if (!byParty[mp.party]) byParty[mp.party] = [];
       byParty[mp.party].push(mp);
@@ -68,12 +95,13 @@ export default function CitizenPartiesPage() {
       const q = buildStats('questions_count');
       const d = buildStats('debates_count');
       const b = buildStats('bills_sponsored');
+      const mp = buildStats('mplad_utilization_pct');
       return {
         name,
         count: mps.length,
-        median: { attendance_rate: a.median, questions_count: q.median, debates_count: d.median, bills_sponsored: b.median },
-        min: { attendance_rate: a.min, questions_count: q.min, debates_count: d.min, bills_sponsored: b.min },
-        max: { attendance_rate: a.max, questions_count: q.max, debates_count: d.max, bills_sponsored: b.max },
+        median: { attendance_rate: a.median, questions_count: q.median, debates_count: d.median, bills_sponsored: b.median, mplad_utilization_pct: mp.median },
+        min: { attendance_rate: a.min, questions_count: q.min, debates_count: d.min, bills_sponsored: b.min, mplad_utilization_pct: mp.min },
+        max: { attendance_rate: a.max, questions_count: q.max, debates_count: d.max, bills_sponsored: b.max, mplad_utilization_pct: mp.max },
       };
     });
   }, [allMps, scope]);
@@ -90,6 +118,30 @@ export default function CitizenPartiesPage() {
     [parties, metric]
   );
 
+  // Selection doesn't carry across a scope change (the party may not exist in the new scope).
+  useEffect(() => {
+    setSelectedParty(null);
+  }, [scope]);
+
+  const togglePartySelected = (name: string) => {
+    setSelectedParty(prev => (prev === name ? null : name));
+  };
+
+  const handleDrillDown = () => {
+    if (!selectedParty) return;
+    router.push(`/citizen/search?q=${encodeURIComponent(selectedParty)}`);
+  };
+
+  const handleSwitchToState = () => {
+    if (scope === 'National') {
+      stateSelectRef.current?.focus();
+      // Not all browsers support showPicker(); focusing is enough of a nudge where it isn't.
+      stateSelectRef.current?.showPicker?.();
+    } else {
+      setScope('National');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto w-full px-4 md:px-8 py-10 space-y-8">
       <SectionHeader
@@ -101,18 +153,18 @@ export default function CitizenPartiesPage() {
       <div>
         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 block">Metric</span>
         <div className="flex flex-wrap gap-2">
-          {METRICS.map(m => (
+          {metrics.map(m => (
             <button
               key={m.key}
               onClick={() => setMetric(m.key)}
               className={cn(
-                'flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors',
+                'px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors',
                 metric === m.key
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-foreground text-background'
                   : 'bg-card text-muted-foreground hover:text-foreground border border-border'
               )}
             >
-              <m.icon className="h-3.5 w-3.5" /> {m.label}
+              {m.label}
             </button>
           ))}
         </div>
@@ -125,7 +177,7 @@ export default function CitizenPartiesPage() {
           <button
             onClick={() => setScope('National')}
             className={cn(
-              'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors',
+              'px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors',
               scope === 'National'
                 ? 'bg-foreground text-background'
                 : 'bg-card text-muted-foreground hover:text-foreground border border-border'
@@ -133,14 +185,26 @@ export default function CitizenPartiesPage() {
           >
             National
           </button>
-          <select
-            value={scope === 'National' ? '' : scope}
-            onChange={e => setScope(e.target.value || 'National')}
-            className="h-9 px-3 bg-card border border-border rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-orange-500/40 cursor-pointer"
+          <div
+            className={cn(
+              'relative flex items-center gap-1 pl-3.5 pr-2.5 py-1.5 rounded-full text-xs font-bold border transition-colors cursor-pointer',
+              scope !== 'National'
+                ? 'bg-foreground text-background border-foreground'
+                : 'bg-card text-muted-foreground hover:text-foreground border-border'
+            )}
           >
-            <option value="">Or pick a state…</option>
-            {states.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+            <span>{scope === 'National' ? 'By state' : scope}</span>
+            <ChevronDown className="h-3.5 w-3.5" />
+            <select
+              ref={stateSelectRef}
+              value={scope === 'National' ? '' : scope}
+              onChange={e => setScope(e.target.value || 'National')}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            >
+              <option value="">Or pick a state…</option>
+              {states.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -151,85 +215,93 @@ export default function CitizenPartiesPage() {
       ) : sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">No parties have MPs in {scope}.</p>
       ) : (
-        <div className="space-y-3">
-          {sorted.map((party, i) => {
-            const minPct = (party.min[metric] / domainMax) * 100;
-            const maxPct = (party.max[metric] / domainMax) * 100;
-            const medianPct = (party.median[metric] / domainMax) * 100;
+        <>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border-2 border-foreground/80 bg-card p-5 sm:p-6"
+          >
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+              Party averages — median MP with spread (min–max)
+            </p>
 
-            return (
-              <motion.div
-                key={party.name}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="bg-card border border-border rounded-2xl p-5 space-y-4 hover:border-orange-500/30 transition-colors"
-              >
-                {/* Party name + rank */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs font-black text-muted-foreground/60 w-6 shrink-0">#{i + 1}</span>
-                    <PartyLogo party={party.name} size="md" />
-                    <div className="min-w-0">
+            <div className="divide-y divide-border/60">
+              {sorted.map((party, i) => {
+                const minPct = (party.min[metric] / domainMax) * 100;
+                const maxPct = (party.max[metric] / domainMax) * 100;
+                const medianPct = (party.median[metric] / domainMax) * 100;
+                const palette = BAR_PALETTE[i % BAR_PALETTE.length];
+                const isSelected = selectedParty === party.name;
+
+                return (
+                  <div key={party.name} className="flex items-center gap-3 sm:gap-4 py-3.5">
+                    <button
+                      onClick={() => togglePartySelected(party.name)}
+                      aria-pressed={isSelected}
+                      aria-label={`Select ${party.name} for drill-down`}
+                      className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {isSelected ? <CheckSquare className="h-4 w-4 text-orange-500" /> : <Square className="h-4 w-4" />}
+                    </button>
+
+                    <div className="w-28 sm:w-36 shrink-0 min-w-0">
                       <p className="text-sm font-black text-foreground truncate">{party.name}</p>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {party.count} MP{party.count !== 1 ? 's' : ''} in {scope === 'National' ? 'Lok Sabha' : scope}
+                      <p className="text-[9px] text-muted-foreground">
+                        {party.count} MP{party.count !== 1 ? 's' : ''}
                       </p>
                     </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={cn('text-xl font-black', activeMetric.color)}>{activeMetric.format(party.median[metric])}</p>
-                    <p className="text-[9px] text-muted-foreground uppercase tracking-widest">median · {activeMetric.shortLabel}</p>
-                  </div>
-                </div>
 
-                {/* Median-with-spread bar for the selected metric */}
-                <div>
-                  <div className="relative h-2.5 bg-background rounded-full overflow-hidden">
-                    {/* min–max range */}
-                    <div
-                      className="absolute inset-y-0 bg-foreground/12 rounded-full"
-                      style={{ left: `${minPct}%`, width: `${Math.max(2, maxPct - minPct)}%` }}
-                    />
-                    {/* median tick */}
-                    <div
-                      className="absolute inset-y-0 w-[3px] bg-orange-500 rounded-full"
-                      style={{ left: `${medianPct}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-[9px] text-muted-foreground font-medium">min {activeMetric.format(party.min[metric])}</span>
-                    <span className="text-[9px] text-muted-foreground font-medium">max {activeMetric.format(party.max[metric])}</span>
-                  </div>
-                </div>
-
-                {/* Secondary metrics at a glance (also median, not avg) */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {METRICS.map(m => (
-                    <div key={m.key} className="bg-background/60 rounded-xl p-3 border border-border/60">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <m.icon className={cn('h-3 w-3', m.color)} />
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">{m.shortLabel}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn('relative h-2.5 rounded-full overflow-hidden', palette.track)}>
+                        <div
+                          className={cn('absolute inset-y-0 rounded-full', palette.fill)}
+                          style={{ left: `${minPct}%`, width: `${Math.max(2, maxPct - minPct)}%` }}
+                        />
+                        <div
+                          className="absolute inset-y-0 w-[3px] bg-foreground rounded-full"
+                          style={{ left: `${medianPct}%` }}
+                        />
                       </div>
-                      <p className={cn('text-sm font-black', m.color)}>{m.format(party.median[m.key])}</p>
                     </div>
-                  ))}
-                </div>
 
-                <Link
-                  href={`/citizen/search?q=${encodeURIComponent(party.name)}`}
-                  className="inline-block text-[10px] text-orange-500 hover:text-orange-400 font-bold transition-colors"
-                >
-                  View all {party.name} MPs →
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
+                    <div className="w-14 sm:w-16 text-right shrink-0">
+                      <p className="text-base font-black text-foreground">{activeMetric.format(party.median[metric])}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-border/60">
+              <div className="flex items-center gap-4 text-[9px] text-muted-foreground uppercase tracking-wide">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-foreground inline-block" /> median MP
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm border border-muted-foreground inline-block" /> min–max range
+                </span>
+              </div>
+              <span className="text-[9px] text-muted-foreground italic">neutral colors — no ideological ranking</span>
+            </div>
+          </motion.div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleDrillDown}
+              disabled={!selectedParty}
+              className="px-4 py-2 rounded-full border border-border text-xs font-bold transition-colors hover:border-orange-500/50 hover:text-orange-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-current"
+            >
+              {selectedParty ? `Drill to ${selectedParty}'s MP list →` : "Drill to a party's MP list →"}
+            </button>
+            <button
+              onClick={handleSwitchToState}
+              className="px-4 py-2 rounded-full border border-border text-xs font-bold transition-colors hover:border-orange-500/50 hover:text-orange-500"
+            >
+              {scope === 'National' ? 'Switch to a single state' : 'Back to national'}
+            </button>
+          </div>
+        </>
       )}
-
-      <div className="rounded-2xl border border-border bg-card/50 p-4">
-      </div>
     </div>
   );
 }

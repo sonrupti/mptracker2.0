@@ -28,6 +28,13 @@ export interface MP {
   topic_scores: Record<string, number>;
 }
 
+export interface MPLADTotals {
+  mp_id: string;
+  total_sanctioned_rupees: number;
+  total_utilised_rupees: number;
+  utilization_pct: number;
+}
+
 export interface MPPerformanceHistory {
   id: string;
   mp_id: string;
@@ -682,6 +689,98 @@ const regions = REGION_ALIASES[normalizedRegion] || [normalizedRegion];
     } catch (err) {
       console.error("getDebateById exception:", err);
       return null;
+    }
+  },
+
+  /**
+   * Get all questions across every MP, for the global activity feed.
+   * Capped with `limit` since this can otherwise pull thousands of rows.
+   */
+  async getAllQuestions(limit = 1000): Promise<MPQuestion[]> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('mp_questions')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(limit);
+        if (!error && data) return data as MPQuestion[];
+        console.error('Supabase getAllQuestions error, falling back to mock:', error);
+      } catch (err) {
+        console.error('Supabase query error, falling back to mock:', err);
+      }
+    }
+
+    return MOCK_MPS.flatMap((mp: any) => mp._questions || [])
+      .sort((a: any, b: any) => (b.date || '').localeCompare(a.date || ''))
+      .slice(0, limit);
+  },
+
+  /**
+   * Get all debates across every MP, for the global activity feed.
+   */
+  async getAllDebates(limit = 1000): Promise<MPDebate[]> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('mp_debates')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(limit);
+        if (!error && data) return data as MPDebate[];
+        console.error('Supabase getAllDebates error, falling back to mock:', error);
+      } catch (err) {
+        console.error('Supabase query error, falling back to mock:', err);
+      }
+    }
+
+    return MOCK_MPS.flatMap((mp: any) => mp._debates || [])
+      .sort((a: any, b: any) => (b.date || '').localeCompare(a.date || ''))
+      .slice(0, limit);
+  },
+
+  /**
+   * Get all bills across every MP, for the global activity feed.
+   */
+  async getAllBills(limit = 1000): Promise<MPBill[]> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('mp_bills')
+          .select('*')
+          .order('date_introduced', { ascending: false })
+          .limit(limit);
+        if (!error && data) return data as MPBill[];
+        console.error('Supabase getAllBills error, falling back to mock:', error);
+      } catch (err) {
+        console.error('Supabase query error, falling back to mock:', err);
+      }
+    }
+
+    return MOCK_MPS.flatMap((mp: any) => mp._bills || [])
+      .sort((a: any, b: any) => (b.date_introduced || '').localeCompare(a.date_introduced || ''))
+      .slice(0, limit);
+  },
+
+  /**
+   * Per-MP MPLAD sanctioned/utilised totals, aggregated server-side via the
+   * `mplad_mp_totals` view (see supabase/mplad_mp_totals_view.sql). Powers
+   * the "MPLAD Utilised" metric on the Parties page. Returns [] if the view
+   * hasn't been created yet — callers should treat that as "unavailable",
+   * not "everyone is at 0%".
+   */
+  async getMpladTotals(): Promise<MPLADTotals[]> {
+    if (!supabase) return [];
+    try {
+      const { data, error } = await supabase.from('mplad_mp_totals').select('*');
+      if (error) {
+        console.error('getMpladTotals error (view may not exist yet):', error.message);
+        return [];
+      }
+      return (data as MPLADTotals[]) || [];
+    } catch (err) {
+      console.error('getMpladTotals exception:', err);
+      return [];
     }
   },
 

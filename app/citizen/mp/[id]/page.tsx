@@ -8,7 +8,7 @@ import MPLADSCard from '@/components/citizen/MPLADSCard';
 import MPLADSDashboard from "@/components/mplads/MPLADSDashboard";
 import {
   Clock, MessageSquare, FileText, Activity, MapPin, TrendingUp, Award, Calendar,
-  LayoutGrid, CheckCircle2, HelpCircle, Sparkles, ExternalLink, Wallet,
+  LayoutGrid, CheckCircle2, HelpCircle, Sparkles, Wallet,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -21,6 +21,8 @@ import {
   PageLoader, ErrorBanner, BackButton, ScoreBadge, PartyLogo,
   Tabs, BenchmarkRow, ComparisonChip,
 } from '@/components/citizen/CitizenUI';
+import ActivityList from '@/components/citizen/ActivityList';
+import { classifyTopic, deriveScope } from '@/lib/activityTopics';
 
 export default function MPProfilePage() {
   const params = useParams();
@@ -132,6 +134,36 @@ const [mpladsLoading, setMPLADSLoading] = useState(true);
     () => questions.filter(q => q.response_text || q.full_answer || q.answer_date).length,
     [questions]
   );
+
+  const questionItems = useMemo(() => questions.map(q => ({
+    id: q.id,
+    date: q.date,
+    title: q.question_text,
+    ministry: q.ministry_name || q.ministry,
+    topicId: classifyTopic(q.category, q.ministry_name, q.ministry, q.keywords, q.question_text),
+    scope: deriveScope(q.question_text, mp?.constituency, mp?.state),
+    starred: (q.question_type || '').toLowerCase() === 'starred',
+    href: q.source_url || q.prs_url || q.official_url || q.link || q.question_pdf,
+  })), [questions, mp]);
+
+  const debateItems = useMemo(() => debates.map(d => ({
+    id: d.id,
+    date: d.date,
+    title: d.title,
+    ministry: d.ministry,
+    topicId: classifyTopic(d.topic, d.ministry, d.debate_type, d.title),
+    scope: deriveScope(d.title, mp?.constituency, mp?.state),
+    href: d.prs_url || d.video_url || d.transcript_url,
+  })), [debates, mp]);
+
+  const billItems = useMemo(() => bills.map(b => ({
+    id: b.id,
+    date: b.date_introduced || '',
+    title: b.title,
+    topicId: classifyTopic(b.title, b.description),
+    scope: deriveScope(b.title, mp?.constituency, mp?.state),
+    href: b.prs_bill_page_url,
+  })), [bills, mp]);
 
   if (loading) return <PageLoader />;
   if (error || !mp) return <ErrorBanner message="This MP profile could not be loaded." onRetry={() => router.refresh()} />;
@@ -475,22 +507,13 @@ color: "text-orange-500",
                 )}
 
                 <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-                  <h2 className="text-lg font-black mb-6">Recent Questions</h2>
-                  {questions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No questions on record for this MP.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {questions.slice(0, 8).map(q => (
-                        <div key={q.id} className="p-4 bg-background rounded-xl border border-border/60">
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider">{q.ministry_name || q.ministry || 'General'}</span>
-                            <span className="text-[10px] font-medium text-muted-foreground">{q.date}</span>
-                          </div>
-                          <p className="text-sm font-medium leading-snug line-clamp-2">{q.question_text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <h2 className="text-lg font-black mb-6">Questions on Record</h2>
+                  <ActivityList
+                    items={questionItems}
+                    ctaLabel="Read full question & ministry reply"
+                    emptyMessage="No questions on record for this MP."
+                    pageSize={8}
+                  />
                 </section>
               </>
             )}
@@ -499,22 +522,12 @@ color: "text-orange-500",
               <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
                 <h2 className="text-lg font-black mb-2">Debates</h2>
                 <p className="text-sm text-muted-foreground mb-6">{mp.debates_count} contributions on record in the 18th Lok Sabha.</p>
-                {debates.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No debate records available for this MP.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {debates.map(d => (
-                      <div key={d.id} className="p-4 bg-background rounded-xl border border-border/60">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[10px] font-bold text-sky-500 uppercase tracking-wider">{d.topic || d.debate_type || 'Debate'}</span>
-                          <span className="text-[10px] font-medium text-muted-foreground">{d.date}</span>
-                        </div>
-                        <h3 className="text-sm font-semibold leading-snug mb-1">{d.title}</h3>
-                        {d.speech_snippet && <p className="text-xs text-muted-foreground line-clamp-2">{d.speech_snippet}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <ActivityList
+                  items={debateItems}
+                  ctaLabel="Read full debate details"
+                  emptyMessage="No debate records available for this MP."
+                  pageSize={8}
+                />
               </section>
             )}
 
@@ -536,32 +549,13 @@ color: "text-orange-500",
                 </section>
 
                 <section className="bg-card border border-border/60 rounded-2xl p-6 md:p-8">
-                  <h2 className="text-lg font-black mb-6">Bill Timeline</h2>
-                  {bills.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No bill records available for this MP.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {bills.map(b => (
-                        <div key={b.id} className="relative pl-6 border-l-2 border-border/40">
-                          <div className="absolute w-2.5 h-2.5 bg-amber-500 rounded-full -left-[6px] top-1 ring-2 ring-background" />
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-[10px] font-bold text-muted-foreground">{b.date_introduced || '—'}</span>
-                            {b.status && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">{b.status}</span>
-                            )}
-                          </div>
-                          <h3 className="text-sm font-semibold leading-snug flex items-center gap-1.5">
-                            {b.title}
-                            {b.prs_bill_page_url && (
-                              <a href={b.prs_bill_page_url} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-400">
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            )}
-                          </h3>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <h2 className="text-lg font-black mb-6">Bills</h2>
+                  <ActivityList
+                    items={billItems}
+                    ctaLabel="Read full bill details"
+                    emptyMessage="No bill records available for this MP."
+                    pageSize={8}
+                  />
                 </section>
               </>
             )}

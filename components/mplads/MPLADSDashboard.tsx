@@ -5,12 +5,13 @@ import React, { useMemo } from 'react';
 import { MP, MPLADSCompleted, MPLADSExpenditure, MPLADSRecommended } from '@/lib/supabase';
 
 import MPLADSHeader from './MPLADSHeader';
-import MPLADSStatCards from './MPLADSStatCards';
+import MPLADSSummaryCards from './MPLADSSummaryCards';
+import MPLADSYearlyChart from './MPLADSYearlyChart';
+import MPLADSSectorBreakdown from './MPLADSSectorBreakdown';
 import FundGauge from './FundGauge';
 import ProjectOverview from './ProjectOverview';
 import PerformanceSummary from './PerformanceSummary';
 import ProjectsTable from './ProjectsTable';
-import CategoryPieChart from './CategoryPieChart';
 
 interface Props {
   mp: MP;
@@ -91,31 +92,18 @@ export default function MPLADSDashboard({
     };
   }, [recommended, completed, expenditure]);
 
-  const categoryData = useMemo(() => {
-
-    const counts: Record<string, number> = {};
-
-    recommended.forEach((item) => {
-
-  const category = item.category || "Other";
-
-  counts[category] =
-    (counts[category] || 0) + 1;
-
-});
-    return Object.entries(counts).map(([name, value]) => ({
-      name,
-      value,
-    }));
-
-  }, [recommended]);
-
   return (
     <div className="space-y-8">
 
+      <p className="text-xs font-semibold text-muted-foreground">
+        {mp.constituency} <span className="mx-1.5 text-muted-foreground/40">›</span> MPLAD Funds
+      </p>
+
       <MPLADSHeader mp={mp} />
 
-      <MPLADSStatCards summary={summary} />
+      <MPLADSSummaryCards summary={summary} />
+
+      <MPLADSYearlyChart recommended={recommended} expenditure={expenditure} />
 
       <div className="grid lg:grid-cols-2 gap-6">
 
@@ -131,12 +119,14 @@ export default function MPLADSDashboard({
 
       <PerformanceSummary summary={summary} />
 
-      <CategoryPieChart data={categoryData} />
+      <MPLADSSectorBreakdown recommended={recommended} />
 
-      <ProjectsTable
-        recommended={recommended}
-        completed={completed}
-      />
+      <div id="mplad-works">
+        <ProjectsTable
+          recommended={recommended}
+          completed={completed}
+        />
+      </div>
 
     </div>
   );
