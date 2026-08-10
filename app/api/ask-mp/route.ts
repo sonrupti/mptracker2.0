@@ -22,7 +22,12 @@ export type QueryType =
   | "RANKING"
   | "TOP_N"
   | "FILTERED_RANKING"
-  | "FILTER"
+  | "ANALYTICAL_FILTER"
+  | "STATE_RANKING"
+  | "PARTY_RANKING"
+  | "STATE_COMPARISON"
+  | "PARTY_COMPARISON"
+  | "WEBSITE_META"
   | "GENERAL";
 
 export type MetricKey =
@@ -32,6 +37,15 @@ export type MetricKey =
   | "debates_count"
   | "bills_sponsored"
   | "bills_passed";
+
+export type Operator = ">" | "<" | ">=" | "<=" | "=" | "between";
+
+export interface ConditionSpec {
+  metric: MetricKey;
+  op: Operator;
+  value: number | [number, number];
+  label: string;
+}
 
 export interface HistoryTurn {
   question: string;
@@ -245,6 +259,7 @@ const STATE_ALIASES: Record<string, string[]> = {
   Punjab: ["punjab"],
   Rajasthan: ["rajasthan"],
   Telangana: ["telangana"],
+  Delhi: ["delhi", "nct of delhi"],
 };
 
 function resolveState(question: string, mps: MP[]): { state: string; mps: MP[] } | null {
@@ -334,7 +349,7 @@ function resolveParty(question: string, mps: MP[]): { party: string; mps: MP[] }
 export interface MpMatch {
   mp: MP;
   confidence: number;
-  matchedOn: "constituency" | "name" | "clean_name";
+  matchedOn: "constituency" | "name";
 }
 
 function resolveMP(question: string, mps: MP[], excludeIds: Set<string> = new Set()): MpMatch | null {
@@ -359,15 +374,11 @@ function resolveMP(question: string, mps: MP[], excludeIds: Set<string> = new Se
     }
   }
 
-  // 2. Full name / clean_name exact match
+  // 2. Full name exact match
   for (const m of pool) {
     const normName = normalize(m.name);
-    const normClean = normalize(m.clean_name || "");
     if (normName && normName.length >= 3 && (candidateText.includes(normName) || q.includes(normName))) {
       return { mp: m, confidence: 0.98, matchedOn: "name" };
-    }
-    if (normClean && normClean.length >= 3 && (candidateText.includes(normClean) || q.includes(normClean))) {
-      return { mp: m, confidence: 0.98, matchedOn: "clean_name" };
     }
   }
 
@@ -397,7 +408,7 @@ function resolveMP(question: string, mps: MP[], excludeIds: Set<string> = new Se
     return singleNameMatches[0];
   }
 
-  // 5. Fuzzy match for misspellings
+  // 5. Fuzzy match for misspellings (e.g., "Supriya Sulle", "Godha")
   const constituencyFuzzy = fuzzyBest(candidateText, pool, (m) => m.constituency, 0.75);
   if (constituencyFuzzy) {
     return { mp: constituencyFuzzy.item, confidence: constituencyFuzzy.score, matchedOn: "constituency" };
@@ -442,7 +453,7 @@ function resolveTwoMPs(question: string, mps: MP[]): [MpMatch, MpMatch] | null {
 }
 
 // ============================================================================
-// STAGE 1 CALCULATIONS & CONTEXT BUILDERS
+// STAGE 1 CALCULATIONS & CONDITION PARSER
 // ============================================================================
 
 const CORE_METRICS: MetricKey[] = [
@@ -464,6 +475,94 @@ function getBenchmarkForMetric(mps: MP[], metric: MetricKey): number {
   return KNOWN_NATIONAL_AVERAGES[metric] ?? datasetAverage(mps, metric);
 }
 
+function parseCondition(question: string, metric: MetricKey, mps: MP[]): ConditionSpec | null {
+  const q = question.toLowerCase();
+
+  // 1. National average condition
+  if (/above (the )?national average|more than (the )?national average|higher than (the )?national average/i.test(q)) {
+    const avg = getBenchmarkForMetric(mps, metric);
+    return { metric, op: ">", value: avg, label: `above national average (${avg})` };
+  }
+  if (/below (the )?national average|less than (the )?national average|lower than (the )?national average/i.test(q)) {
+    const avg = getBenchmarkForMetric(mps, metric);
+    return { metric, op: "<", value: avg, label: `below national average (${avg})` };
+  }
+
+  // 2. "between X and Y" / "between X% and Y%"
+  const betweenMatch = q.match(/between\s+(\d+(?:\.\d+)?)\s*%?\s*(?:and|to|-)\s*(\d+(?:\.\d+)?)\s*%?/i);
+  if (betweenMatch) {
+    const v1 = parseFloat(betweenMatch[1]);
+    const v2 = parseFloat(betweenMatch[2]);
+    const min = Math.min(v1, v2);
+    const max = Math.max(v1, v2);
+    return { metric, op: "between", value: [min, max], label: `between ${min} and ${max}` };
+  }
+
+  // 3. "at least X" / "minimum X"
+  const atLeastMatch = q.match(/(?:at least|minimum|no less than)\s+(\d+(?:\.\d+)?)\s*%?/i);
+  if (atLeastMatch) {
+    const val = parseFloat(atLeastMatch[1]);
+    return { metric, op: ">=", value: val, label: `at least ${val}` };
+  }
+
+  // 4. "at most X" / "maximum X"
+  const atMostMatch = q.match(/(?:at most|maximum|no more than)\s+(\d+(?:\.\d+)?)\s*%?/i);
+  if (atMostMatch) {
+    const val = parseFloat(atMostMatch[1]);
+    return { metric, op: "<=", value: val, label: `at most ${val}` };
+  }
+
+  // 5. "exactly X" / "equal to X" / "100% attendance" / "100%"
+  const exactMatch = q.match(/(?:exactly|equal to)\s+(\d+(?:\.\d+)?)\s*%?/i);
+  if (exactMatch) {
+    const val = parseFloat(exactMatch[1]);
+    return { metric, op: "=", value: val, label: `exactly ${val}` };
+  }
+  if (/\b100%|hundred percent\b/i.test(q) && metric === "attendance_rate") {
+    return { metric, op: "=", value: 100, label: "exactly 100%" };
+  }
+
+  // 6. "above X" / "over X" / "more than X" / "greater than X" / "higher than X"
+  const aboveMatch = q.match(/(?:above|over|more than|greater than|higher than)\s+(\d+(?:\.\d+)?)\s*%?/i);
+  if (aboveMatch) {
+    const val = parseFloat(aboveMatch[1]);
+    return { metric, op: ">", value: val, label: `above ${val}` };
+  }
+
+  // 7. "below X" / "under X" / "less than X" / "fewer than X" / "lower than X"
+  const belowMatch = q.match(/(?:below|under|less than|fewer than|lower than)\s+(\d+(?:\.\d+)?)\s*%?/i);
+  if (belowMatch) {
+    const val = parseFloat(belowMatch[1]);
+    return { metric, op: "<", value: val, label: `below ${val}` };
+  }
+
+  // 8. Implicit conditions: "sponsored bills" -> >= 1, "passed bills" -> >= 1
+  if (/\b(sponsored|introduced)\s+bills?\b|\bsponsored\b/i.test(q) && metric === "bills_sponsored") {
+    return { metric, op: ">=", value: 1, label: "at least 1 bill sponsored" };
+  }
+  if (/\bpassed\s+bills?\b/i.test(q) && metric === "bills_passed") {
+    return { metric, op: ">=", value: 1, label: "at least 1 bill passed" };
+  }
+
+  return null;
+}
+
+function evalCondition(val: number, op: Operator, target: number | [number, number]): boolean {
+  if (op === "between" && Array.isArray(target)) {
+    return val >= target[0] && val <= target[1];
+  }
+  if (typeof target === "number") {
+    switch (op) {
+      case ">": return val > target;
+      case "<": return val < target;
+      case ">=": return val >= target;
+      case "<=": return val <= target;
+      case "=": return val === target;
+    }
+  }
+  return false;
+}
+
 function extractTopN(question: string, defaultN = 5): number {
   const match = question.match(/\b(top|bottom|first|best)\s+(\d+)\b|\b(\d+)\s+(top|best|mps)\b/i);
   if (match) {
@@ -482,65 +581,140 @@ interface DetectedQuery {
   metric: MetricKey;
   rankOrder: "asc" | "desc";
   topN: number;
+  condition?: ConditionSpec;
+  isCountQuestion: boolean;
+  isPercentageQuestion: boolean;
   mp?: MpMatch;
   mpB?: MpMatch;
   state?: { state: string; mps: MP[] };
   party?: { party: string; mps: MP[] };
+  stateB?: { state: string; mps: MP[] };
+  partyB?: { party: string; mps: MP[] };
 }
 
-function analyzeQuery(question: string, mps: MP[]): DetectedQuery {
+function analyzeQuery(question: string, mps: MP[], history?: HistoryTurn[]): DetectedQuery {
+  const q = question.toLowerCase();
   const metric = resolveMetric(question);
   const rankOrder = detectRankOrder(question);
   const topN = extractTopN(question);
+  const condition = parseCondition(question, metric, mps);
 
-  const isComparison = /\bcompare\b|\bvs\.?\b|\bversus\b|who (performed|did) better|who is better|which (one|mp) is better/i.test(question);
-  const hasRankingWords = /\b(highest|lowest|most|least|best|worst|top|bottom|highest score|highest attendance|most questions|most debates|most bills)\b/i.test(question);
-  const hasTopNWords = /\b(top|bottom|first|best)\s+\d+\b|\b\d+\s+(top|best|mps)\b/i.test(question);
-  const hasFilterWords = /\b(100%|hundred percent|sponsored bills|passed bills|with attendance)\b/i.test(question);
+  const isCountQuestion = /\b(how many|count|number of)\b/i.test(question);
+  const isPercentageQuestion = /\b(what percentage|percentage of|percent of)\b/i.test(question);
+  const isWebsiteMeta = /\b(website|login|signup|deploy|hosting|frontend|supabase|api key|source code|bug|css|react|nextjs)\b/i.test(question);
 
-  // 1. COMPARISON
-  if (isComparison) {
-    const twoMps = resolveTwoMPs(question, mps);
-    if (twoMps) {
-      return { queryType: "COMPARISON", metric, rankOrder, topN, mp: twoMps[0], mpB: twoMps[1] };
+  if (isWebsiteMeta) {
+    return { queryType: "WEBSITE_META", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion };
+  }
+
+  // 1. Pronoun / Follow-Up Resolution from History
+  let mpMatch = resolveMP(question, mps);
+  let twoMps = resolveTwoMPs(question, mps);
+
+  if (!mpMatch && !twoMps && history && history.length) {
+    const lastData = history[history.length - 1]?.data as Record<string, any> | undefined;
+    if (lastData?.mp?.id) {
+      const prevMp = mps.find((m) => m.id === lastData.mp.id);
+      if (prevMp) {
+        if (/\b(he|she|they|him|her|this mp|that mp|the mp)\b/i.test(q)) {
+          mpMatch = { mp: prevMp, confidence: 0.9, matchedOn: "name" };
+        }
+      }
     }
   }
 
-  // Check for State and Party
+  // 2. COMPARISON
+  const isComparison = /\bcompare\b|\bvs\.?\b|\bversus\b|who (performed|did) better|who is better|which (one|mp) is better/i.test(question);
+  if (isComparison) {
+    if (twoMps) {
+      return { queryType: "COMPARISON", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, mp: twoMps[0], mpB: twoMps[1] };
+    }
+    // Check State comparison (e.g. "Compare Odisha and Maharashtra")
+    const chunks = question.split(/\bcompare\b|\bvs\.?\b|\bversus\b|\band\b/i);
+    const foundStates: { state: string; mps: MP[] }[] = [];
+    for (const chunk of chunks) {
+      const s = resolveState(chunk, mps);
+      if (s && !foundStates.some((f) => f.state === s.state)) foundStates.push(s);
+      if (foundStates.length === 2) break;
+    }
+    if (foundStates.length === 2) {
+      return { queryType: "STATE_COMPARISON", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, state: foundStates[0], stateB: foundStates[1] };
+    }
+    // Check Party comparison (e.g. "Compare BJP and Congress")
+    const foundParties: { party: string; mps: MP[] }[] = [];
+    for (const chunk of chunks) {
+      const p = resolveParty(chunk, mps);
+      if (p && !foundParties.some((f) => f.party === p.party)) foundParties.push(p);
+      if (foundParties.length === 2) break;
+    }
+    if (foundParties.length === 2) {
+      return { queryType: "PARTY_COMPARISON", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, party: foundParties[0], partyB: foundParties[1] };
+    }
+  }
+
+  // Check State & Party
   const state = resolveState(question, mps);
   const party = resolveParty(question, mps);
 
-  // 2. FILTERED_RANKING
+  // 3. ANALYTICAL_FILTER (Count/Percentage or Condition questions)
+  if (condition || isCountQuestion || isPercentageQuestion) {
+    return {
+      queryType: "ANALYTICAL_FILTER",
+      metric,
+      rankOrder,
+      topN,
+      condition: condition || undefined,
+      isCountQuestion,
+      isPercentageQuestion,
+      state: state || undefined,
+      party: party || undefined,
+    };
+  }
+
+  // 4. PARTY / STATE LEADERBOARDS & STATS
+  const isPartyWord = /\bpart(y|ies)\b/i.test(question);
+  const isStateWord = /\bstate(s)?\b/i.test(question);
+
+  if (isPartyWord && /\b(highest|most|best|average)\b/i.test(question)) {
+    return { queryType: "PARTY_RANKING", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion };
+  }
+  if (isStateWord && /\b(highest|most|best|average)\b/i.test(question)) {
+    return { queryType: "STATE_RANKING", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion };
+  }
+
+  const hasRankingWords = /\b(highest|lowest|most|least|best|worst|top|bottom)\b/i.test(question);
+  const hasTopNWords = /\b(top|bottom|first|best)\s+\d+\b|\b\d+\s+(top|best|mps)\b/i.test(question);
+
+  // 5. FILTERED_RANKING
   if ((state || party) && (hasRankingWords || hasTopNWords)) {
-    return { queryType: "FILTERED_RANKING", metric, rankOrder, topN, state: state || undefined, party: party || undefined };
+    return { queryType: "FILTERED_RANKING", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, state: state || undefined, party: party || undefined };
   }
 
-  // 3. TOP_N
+  // 6. TOP_N
   if (hasTopNWords) {
-    return { queryType: "TOP_N", metric, rankOrder, topN, state: state || undefined, party: party || undefined };
+    return { queryType: "TOP_N", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, state: state || undefined, party: party || undefined };
   }
 
-  // 4. RANKING
+  // 7. RANKING
   if (hasRankingWords) {
-    return { queryType: "RANKING", metric, rankOrder, topN };
+    return { queryType: "RANKING", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion };
   }
 
-  // 5. FILTER (e.g. 100% attendance, sponsored bills, or state/party without ranking)
-  if (hasFilterWords || (state && !resolveMP(question, mps)) || (party && !resolveMP(question, mps))) {
-    return { queryType: "FILTER", metric, rankOrder, topN, state: state || undefined, party: party || undefined };
-  }
-
-  // 6. SINGLE_MP
-  const mpMatch = resolveMP(question, mps);
+  // 8. SINGLE_MP
   if (mpMatch) {
-    return { queryType: "SINGLE_MP", metric, rankOrder, topN, mp: mpMatch };
+    return { queryType: "SINGLE_MP", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, mp: mpMatch };
   }
 
-  return { queryType: "GENERAL", metric, rankOrder, topN };
+  // 9. State/Party scoped overview without ranking
+  if (state || party) {
+    return { queryType: "ANALYTICAL_FILTER", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion, state: state || undefined, party: party || undefined };
+  }
+
+  return { queryType: "GENERAL", metric, rankOrder, topN, isCountQuestion, isPercentageQuestion };
 }
 
 // ============================================================================
-// CONTEXT GENERATION FOR GEMINI
+// CONTEXT BUILDERS FOR GEMINI
 // ============================================================================
 
 function buildSingleMpContext(match: MpMatch, allMps: MP[]) {
@@ -595,6 +769,48 @@ function buildComparisonContext(matchA: MpMatch, matchB: MpMatch, allMps: MP[]) 
   };
 }
 
+function buildAnalyticalFilterContext(detected: DetectedQuery, allMps: MP[]) {
+  let pool = allMps;
+  let filterScope = "All 544 Lok Sabha MPs";
+
+  if (detected.state) {
+    pool = detected.state.mps;
+    filterScope = `State: ${detected.state.state} (${pool.length} MPs)`;
+  } else if (detected.party) {
+    pool = detected.party.mps;
+    filterScope = `Party: ${detected.party.party} (${pool.length} MPs)`;
+  }
+
+  const metric = detected.metric;
+  let matches = pool;
+  let conditionLabel = "Dataset Overview";
+
+  if (detected.condition) {
+    const c = detected.condition;
+    conditionLabel = c.label;
+    matches = pool.filter((m) => evalCondition(getMpMetric(m, metric), c.op, c.value));
+  }
+
+  const matchingCount = matches.length;
+  const totalCount = pool.length;
+  const percentage = totalCount > 0 ? Number(((matchingCount / totalCount) * 100).toFixed(1)) : 0;
+  const averageInMatches = matches.length ? datasetAverage(matches, metric) : 0;
+
+  return {
+    filterScope,
+    metric,
+    metricLabel: METRIC_LABELS[metric],
+    conditionLabel,
+    matchingCount,
+    totalCount,
+    percentage,
+    averageInMatches,
+    nationalBenchmark: getBenchmarkForMetric(allMps, metric),
+    sampleMatchingMps: matches.slice(0, 15).map(slimMp),
+    hasMoreMatches: matches.length > 15,
+  };
+}
+
 function buildRankingContext(mps: MP[], metric: MetricKey, order: "asc" | "desc") {
   const values = mps.map((m) => getMpMetric(m, metric));
   const targetVal = order === "asc" ? Math.min(...values) : Math.max(...values);
@@ -633,12 +849,7 @@ function buildTopNContext(mps: MP[], metric: MetricKey, order: "asc" | "desc", n
   };
 }
 
-function buildFilteredRankingContext(
-  detected: DetectedQuery,
-  metric: MetricKey,
-  order: "asc" | "desc",
-  allMps: MP[]
-) {
+function buildFilteredRankingContext(detected: DetectedQuery, metric: MetricKey, order: "asc" | "desc", allMps: MP[]) {
   let pool = allMps;
   let filterLabel = "All MPs";
 
@@ -669,54 +880,156 @@ function buildFilteredRankingContext(
   };
 }
 
-function buildFilterContext(detected: DetectedQuery, metric: MetricKey, question: string, allMps: MP[]) {
-  let pool = allMps;
-  let filterCriteria = "Custom Filter";
-
-  const is100Attendance = /\b100%|hundred percent\b/i.test(question);
-  const isSponsoredBills = /\bsponsored\b/i.test(question);
-
-  if (detected.state) {
-    pool = detected.state.mps;
-    filterCriteria = `State: ${detected.state.state}`;
-  } else if (detected.party) {
-    pool = detected.party.mps;
-    filterCriteria = `Party: ${detected.party.party}`;
-  } else if (is100Attendance) {
-    pool = allMps.filter((m) => getMpMetric(m, "attendance_rate") === 100);
-    filterCriteria = "Attendance rate = 100%";
-  } else if (isSponsoredBills) {
-    pool = allMps.filter((m) => getMpMetric(m, "bills_sponsored") > 0);
-    filterCriteria = "Bills sponsored > 0";
+function buildPartyRankingContext(mps: MP[], metric: MetricKey) {
+  const byParty = new Map<string, MP[]>();
+  for (const m of mps) {
+    if (!m.party) continue;
+    if (!byParty.has(m.party)) byParty.set(m.party, []);
+    byParty.get(m.party)!.push(m);
   }
 
+  const rankings = Array.from(byParty.entries())
+    .map(([party, partyMps]) => ({
+      name: party,
+      mpCount: partyMps.length,
+      average: datasetAverage(partyMps, metric),
+    }))
+    .sort((a, b) => b.average - a.average);
+
   return {
-    filterCriteria,
-    matchingCount: pool.length,
-    totalMps: allMps.length,
-    sampleMps: pool.slice(0, 15).map(slimMp),
-    hasMore: pool.length > 15,
+    metric,
+    metricLabel: METRIC_LABELS[metric],
+    unit: METRIC_UNIT[metric],
+    nationalBenchmark: getBenchmarkForMetric(mps, metric),
+    rankings: rankings.slice(0, 10),
+  };
+}
+
+function buildStateRankingContext(mps: MP[], metric: MetricKey) {
+  const byState = new Map<string, MP[]>();
+  for (const m of mps) {
+    const st = getState(m);
+    if (!st) continue;
+    if (!byState.has(st)) byState.set(st, []);
+    byState.get(st)!.push(m);
+  }
+
+  const rankings = Array.from(byState.entries())
+    .map(([state, stateMps]) => ({
+      name: state,
+      mpCount: stateMps.length,
+      average: datasetAverage(stateMps, metric),
+    }))
+    .sort((a, b) => b.average - a.average);
+
+  return {
+    metric,
+    metricLabel: METRIC_LABELS[metric],
+    unit: METRIC_UNIT[metric],
+    nationalBenchmark: getBenchmarkForMetric(mps, metric),
+    rankings: rankings.slice(0, 10),
+  };
+}
+
+function buildPartyComparisonContext(partyA: { party: string; mps: MP[] }, partyB: { party: string; mps: MP[] }, allMps: MP[]) {
+  const comparison = CORE_METRICS.map((metric) => {
+    const avgA = datasetAverage(partyA.mps, metric);
+    const avgB = datasetAverage(partyB.mps, metric);
+    return {
+      metric,
+      label: METRIC_LABELS[metric],
+      partyAAverage: avgA,
+      partyBAverage: avgB,
+      difference: Number((avgA - avgB).toFixed(1)),
+      nationalBenchmark: getBenchmarkForMetric(allMps, metric),
+    };
+  });
+
+  return {
+    partyA: { name: partyA.party, mpCount: partyA.mps.length },
+    partyB: { name: partyB.party, mpCount: partyB.mps.length },
+    comparison,
+  };
+}
+
+function buildStateComparisonContext(stateA: { state: string; mps: MP[] }, stateB: { state: string; mps: MP[] }, allMps: MP[]) {
+  const comparison = CORE_METRICS.map((metric) => {
+    const avgA = datasetAverage(stateA.mps, metric);
+    const avgB = datasetAverage(stateB.mps, metric);
+    return {
+      metric,
+      label: METRIC_LABELS[metric],
+      stateAAverage: avgA,
+      stateBAverage: avgB,
+      difference: Number((avgA - avgB).toFixed(1)),
+      nationalBenchmark: getBenchmarkForMetric(allMps, metric),
+    };
+  });
+
+  return {
+    stateA: { name: stateA.state, mpCount: stateA.mps.length },
+    stateB: { name: stateB.state, mpCount: stateB.mps.length },
+    comparison,
   };
 }
 
 // ============================================================================
-// PROMPT BUILDER
+// DETERMINISTIC FALLBACK GENERATOR
+// ============================================================================
+
+function generateFallbackText(detected: DetectedQuery, context: any): string {
+  switch (detected.queryType) {
+    case "SINGLE_MP": {
+      const mp = context.mp;
+      return `${mp.name} represents ${mp.constituency}, ${mp.state} (${mp.party}). Overall Score: ${mp.overall_score} (National Avg: ${KNOWN_NATIONAL_AVERAGES.overall_score}), Attendance: ${mp.attendance_rate}% (National Avg: ${KNOWN_NATIONAL_AVERAGES.attendance_rate}%), Questions asked: ${mp.questions_count}, Debates: ${mp.debates_count}, Bills sponsored: ${mp.bills_sponsored}, Bills passed: ${mp.bills_passed}.`;
+    }
+    case "COMPARISON": {
+      const mpA = context.mpA;
+      const mpB = context.mpB;
+      return `Comparison between ${mpA.name} (${mpA.constituency}) and ${mpB.name} (${mpB.constituency}):\n• Overall Score: ${mpA.name} (${mpA.overall_score}) vs ${mpB.name} (${mpB.overall_score})\n• Attendance: ${mpA.name} (${mpA.attendance_rate}%) vs ${mpB.name} (${mpB.attendance_rate}%)\n• Questions Asked: ${mpA.name} (${mpA.questions_count}) vs ${mpB.name} (${mpB.questions_count})\n• Debates Participated: ${mpA.name} (${mpA.debates_count}) vs ${mpB.name} (${mpB.debates_count})\n• Bills Sponsored: ${mpA.name} (${mpA.bills_sponsored}) vs ${mpB.name} (${mpB.bills_sponsored})`;
+    }
+    case "ANALYTICAL_FILTER": {
+      const c = context;
+      return `${c.matchingCount} of ${c.totalCount} MPs (${c.percentage}%) match the criteria (${c.conditionLabel} for ${c.metricLabel}).`;
+    }
+    case "RANKING": {
+      const r = context;
+      if (r.isTie) {
+        return `There is no single MP with the ${r.order === "asc" ? "lowest" : "highest"} ${r.metricLabel}. ${r.tiedCount} MPs are tied for the top rank with a value of ${r.targetValue}.`;
+      }
+      const top = r.tiedMps[0];
+      return `The MP with the ${r.order === "asc" ? "lowest" : "highest"} ${r.metricLabel} is ${top.name} (${top.constituency}, ${top.state}) with ${top.overall_score ?? top.attendance_rate}.`;
+    }
+    case "TOP_N": {
+      const t = context;
+      const names = t.list.map((m: any, i: number) => `${i + 1}. ${m.name} (${m.constituency}): ${m[t.metric] ?? m.overall_score}`).join("\n");
+      return `Top ${t.list.length} MPs by ${t.metricLabel}:\n${names}`;
+    }
+    case "WEBSITE_META": {
+      return "I can answer questions about the performance data of 544 Lok Sabha MPs. I do not have access to internal website settings or UI configurations.";
+    }
+    default:
+      return "Calculations complete. Please see the structured context for verified figures.";
+  }
+}
+
+// ============================================================================
+// GEMINI PROMPT & CALL
 // ============================================================================
 
 const SYSTEM_RULES = `
 You are the conversational assistant for an Indian Parliament MP performance tracker.
 
-The supplied DATA is the only source of truth.
-Never invent statistics.
-Never change numbers.
-Never calculate rankings independently when the ranking has already been computed by the application.
-Never claim that an MP is objectively good or bad without a benchmark.
-When several MPs tie for first place, explicitly say that they are tied.
-When comparing MPs, explain metric-by-metric differences.
-If information is unavailable, say so clearly.
-Use concise, natural language.
-Use bullet points where useful.
-Do not mention internal implementation details, APIs, Supabase, TypeScript, prompts, or database queries.
+The supplied VERIFIED DATABASE CONTEXT is the ONLY source of truth.
+Rules:
+1. Never invent statistics, MPs, constituencies, parties, rankings, or benchmarks.
+2. Never change numbers provided in the verified context.
+3. Do not calculate rankings or counts independently — use the TypeScript pre-calculated figures.
+4. When several MPs tie for first place, explicitly state that they are tied.
+5. When comparing MPs, explain metric-by-metric differences without subjective value judgments.
+6. If asked about UI/login/code/website features, explain that you cover MP parliamentary performance data.
+7. Keep answers concise, natural, and informative. Use bullet points where appropriate.
+8. Do not mention internal code, database queries, TypeScript, Supabase, or API prompts.
 `.trim();
 
 function buildPrompt(params: {
@@ -746,46 +1059,7 @@ ${JSON.stringify(context, null, 2)}
 USER'S QUESTION:
 "${question}"
 
-Write the response now. Return only the answer text — no preamble, no labels.`;
-}
-
-const CLARIFICATION_MESSAGE =
-  "I couldn't confidently match that to an MP, constituency, state, or party in the records. Could you try naming the constituency, state, or MP more specifically — for example \"How did the MP from Lucknow perform?\" or \"Which MP has the highest attendance?\"";
-
-// ============================================================================
-// GEMINI CALL & ERROR HANDLING
-// ============================================================================
-
-function classifyGeminiError(error: unknown): { status: number; code: string; message: string } {
-  const raw = error instanceof Error ? error.message : String(error);
-  const lower = raw.toLowerCase();
-
-  if (lower.includes("429") || lower.includes("rate limit") || lower.includes("quota")) {
-    return {
-      status: 429,
-      code: "RATE_LIMITED",
-      message: "The AI service is temporarily rate-limited. Please try again shortly.",
-    };
-  }
-
-  if (
-    lower.includes("404") ||
-    lower.includes("not found") ||
-    lower.includes("is not supported") ||
-    lower.includes("unavailable")
-  ) {
-    return {
-      status: 404,
-      code: "MODEL_UNAVAILABLE",
-      message: "The AI model configured for this feature is currently unavailable. Please try again later.",
-    };
-  }
-
-  return {
-    status: 500,
-    code: "SERVER_ERROR",
-    message: "Something went wrong while processing your question.",
-  };
+Write the response now. Return only the natural-language answer text.`;
 }
 
 async function askGemini(params: {
@@ -793,32 +1067,32 @@ async function askGemini(params: {
   queryType: QueryType;
   context: unknown;
   history?: HistoryTurn[];
-}): Promise<{ text: string } | { error: string; code: string; status: number }> {
+}): Promise<{ text: string }> {
   const prompt = buildPrompt(params);
 
   try {
     const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
-    return { text };
+    if (text && text.trim()) return { text };
   } catch (error) {
     console.error(`ask-mp: Gemini call failed with model ${GEMINI_MODEL}:`, error);
 
-    // Fallback model check if default model fails
     if (GEMINI_MODEL !== "gemini-1.5-flash") {
       try {
         console.log("ask-mp: Attempting fallback to gemini-1.5-flash...");
         const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const fallbackResult = await fallbackModel.generateContent(prompt);
-        return { text: fallbackResult.response.text() };
+        const text = fallbackResult.response.text();
+        if (text && text.trim()) return { text };
       } catch (fallbackErr) {
         console.error("ask-mp: Fallback Gemini model also failed:", fallbackErr);
       }
     }
-
-    const classified = classifyGeminiError(error);
-    return { error: classified.message, code: classified.code, status: classified.status };
   }
+
+  // Generate deterministic fallback answer if Gemini is unavailable
+  return { text: generateFallbackText(params.queryType as any, params.context) };
 }
 
 // ============================================================================
@@ -841,14 +1115,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please enter a question.", code: "MISSING_QUESTION" }, { status: 400 });
   }
 
-  if (!process.env.GOOGLE_AI_STUDIO_API_KEY) {
-    console.error("ask-mp: GOOGLE_AI_STUDIO_API_KEY is not configured.");
-    return NextResponse.json(
-      { error: "The AI service is not configured on the server.", code: "SERVER_ERROR" },
-      { status: 500 }
-    );
-  }
-
   let mps: MP[];
   try {
     mps = await db.getMps();
@@ -861,37 +1127,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "MP data is currently unavailable.", code: "SERVER_ERROR" }, { status: 503 });
   }
 
-  const detected = analyzeQuery(question, mps);
+  const detected = analyzeQuery(question, mps, history);
 
-  // Handle short follow-up questions ("why?", "tell me more")
-  const isShortFollowUp = question.split(/\s+/).length <= 4 && detected.queryType === "GENERAL";
-  const lastTurn = history && history.length ? history[history.length - 1] : undefined;
-
-  if (isShortFollowUp && lastTurn?.data) {
-    const answer = await askGemini({
-      question,
-      queryType: "GENERAL",
-      context: lastTurn.data,
-      history,
-    });
-
-    if ("error" in answer) {
-      return NextResponse.json({ error: answer.error, code: answer.code }, { status: answer.status });
-    }
-
+  if (detected.queryType === "WEBSITE_META") {
+    const metaAnswer = "I can answer questions about the parliamentary performance data of all 544 Lok Sabha MPs. I do not have verified information regarding website interface settings, user accounts, or server code.";
     return NextResponse.json({
-      answer: answer.text,
+      answer: metaAnswer,
       mp: null,
-      queryType: "GENERAL",
-      data: lastTurn.data,
-    });
-  }
-
-  if (detected.queryType === "GENERAL") {
-    return NextResponse.json({
-      answer: CLARIFICATION_MESSAGE,
-      mp: null,
-      queryType: "GENERAL",
+      queryType: "WEBSITE_META",
       data: null,
     });
   }
@@ -914,6 +1157,12 @@ export async function POST(request: Request) {
       responseData = { mps: [slimMp(detected.mp!.mp), slimMp(detected.mpB!.mp)], comparison: compContext.comparison };
       break;
     }
+    case "ANALYTICAL_FILTER": {
+      const filterContext = buildAnalyticalFilterContext(detected, mps);
+      context = filterContext;
+      responseData = { filter: filterContext };
+      break;
+    }
     case "RANKING": {
       const rankContext = buildRankingContext(mps, detected.metric, detected.rankOrder);
       context = rankContext;
@@ -932,8 +1181,32 @@ export async function POST(request: Request) {
       responseData = { ranking: filteredRankContext };
       break;
     }
-    case "FILTER": {
-      const filterContext = buildFilterContext(detected, detected.metric, question, mps);
+    case "PARTY_RANKING": {
+      const partyRankContext = buildPartyRankingContext(mps, detected.metric);
+      context = partyRankContext;
+      responseData = { partyRankings: partyRankContext.rankings };
+      break;
+    }
+    case "STATE_RANKING": {
+      const stateRankContext = buildStateRankingContext(mps, detected.metric);
+      context = stateRankContext;
+      responseData = { stateRankings: stateRankContext.rankings };
+      break;
+    }
+    case "PARTY_COMPARISON": {
+      const partyCompContext = buildPartyComparisonContext(detected.party!, detected.partyB!, mps);
+      context = partyCompContext;
+      responseData = { partyComparison: partyCompContext };
+      break;
+    }
+    case "STATE_COMPARISON": {
+      const stateCompContext = buildStateComparisonContext(detected.state!, detected.stateB!, mps);
+      context = stateCompContext;
+      responseData = { stateComparison: stateCompContext };
+      break;
+    }
+    default: {
+      const filterContext = buildAnalyticalFilterContext(detected, mps);
       context = filterContext;
       responseData = { filter: filterContext };
       break;
@@ -946,10 +1219,6 @@ export async function POST(request: Request) {
     context,
     history,
   });
-
-  if ("error" in geminiResult) {
-    return NextResponse.json({ error: geminiResult.error, code: geminiResult.code }, { status: geminiResult.status });
-  }
 
   return NextResponse.json({
     answer: geminiResult.text,
