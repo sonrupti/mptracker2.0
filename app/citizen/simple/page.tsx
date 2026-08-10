@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Search, MapPin, Navigation, Trophy, Landmark, Scale } from 'lucide-react';
 import { db, MP } from '@/lib/supabase';
 import { PartyLogo } from '@/components/citizen/CitizenUI';
+import AskMP from '@/components/citizen/AskMP';
 
 // Same Levenshtein-based fuzzy matcher used on the main search page, so
 // typos ("Bhuvaneshwar") still resolve here too.
@@ -156,7 +157,7 @@ export default function SimpleHomePage() {
             )}
           </AnimatePresence>
         </div>
-
+<AskMP />
       <div
   className={`transition-all duration-200 ${
     open && results.length > 0 ? "mt-80" : "mt-4"
