@@ -13,6 +13,7 @@ export interface MP {
   education: string;
   is_minister: boolean;
   term: string;
+  clean_name?: string | null;
   start_of_term: string;
   status: 'Active' | 'Inactive';
   overall_score: number;
