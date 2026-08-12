@@ -263,6 +263,19 @@ export default function AskMP() {
       setShowGreeting(true);
     }
   }, []);
+  useEffect(() => {
+  const handleScroll = () => {
+    if (window.scrollY > 20) {
+      setShowGreeting(false);
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+
+  return () => {
+    window.removeEventListener('scroll', handleScroll);
+  };
+}, []);
 
   const dismissGreeting = () => {
     setShowGreeting(false);
@@ -374,7 +387,7 @@ export default function AskMP() {
       {/* ------------------------------------------------------------------ */}
       {/* FLOATING BUTTON & INITIAL GREETING BUBBLE                          */}
       {/* ------------------------------------------------------------------ */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
+     <div className="fixed bottom-[88px] right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
         {/* Initial Greeting Bubble */}
         <AnimatePresence>
           {showGreeting && !isOpen && (
@@ -457,8 +470,7 @@ export default function AskMP() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="fixed bottom-20 right-3 sm:right-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[420px] h-[580px] max-h-[82vh] bg-neutral-950/95 backdrop-blur-md border border-border/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-          >
+           className="fixed bottom-[88px] right-3 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-1.5rem)] sm:w-[420px] h-[580px] max-h-[calc(100vh-104px)] bg-neutral-950/95 backdrop-blur-md border border-border/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3.5 bg-neutral-900/80 border-b border-border/60 shrink-0">
               <div className="flex items-center gap-2.5">
