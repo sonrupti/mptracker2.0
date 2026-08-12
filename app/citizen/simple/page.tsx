@@ -4,10 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Navigation, Trophy, Landmark, Scale } from 'lucide-react';
+import { Search, MapPin, Navigation, Trophy, Landmark, Scale, Sparkles, MessageSquare, ArrowRight } from 'lucide-react';
 import { db, MP } from '@/lib/supabase';
 import { PartyLogo } from '@/components/citizen/CitizenUI';
-import AskMP from '@/components/citizen/AskMP';
+import { useMpAssistant } from '@/context/MpAssistantContext';
 
 // Same Levenshtein-based fuzzy matcher used on the main search page, so
 // typos ("Bhuvaneshwar") still resolve here too.
@@ -41,8 +41,19 @@ const EXPLORE_CARDS = [
   { href: '/citizen/compare', icon: Scale, label: 'Compare two MPs', color: 'text-blue-500' },
 ];
 
+const POPULAR_QUESTIONS = [
+  { text: 'Top 5 MPs by performance score', label: 'Top performers' },
+  { text: 'MPs with attendance above 90%', label: '90%+ Attendance' },
+  { text: 'Compare Supriya Sule and Nishikant Dubey', label: 'Compare two MPs' },
+  { text: 'Which party has the highest average attendance?', label: 'Party stats' },
+  { text: 'How many MPs are from Maharashtra?', label: 'State data' },
+  { text: 'Top 10 MPs by most questions asked', label: 'Most questions' },
+];
+
 export default function SimpleHomePage() {
   const router = useRouter();
+  const { openAssistant, askQuestion } = useMpAssistant();
+
   const [query, setQuery] = useState('');
   const [allMps, setAllMps] = useState<MP[]>([]);
   const [open, setOpen] = useState(false);
@@ -66,19 +77,15 @@ export default function SimpleHomePage() {
     ? allMps.filter(m => fuzzyMatch(m.name, query) || fuzzyMatch(m.constituency, query) || fuzzyMatch(m.state, query)).slice(0, 6)
     : [];
 
- const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (results.length === 1) {
+      router.push(`/citizen/mp/${results[0].id}`);
+    } else if (query.trim()) {
+      router.push(`/citizen/search?q=${encodeURIComponent(query.trim())}`);
+    }
+  };
 
-  if (results.length === 1) {
-    router.push(`/citizen/mp/${results[0].id}`);
-  } else if (query.trim()) {
-    router.push(`/citizen/search?q=${encodeURIComponent(query.trim())}`);
-  }
-};
-
-  // Browser geolocation can give us coordinates, but we don't have a
-  // coordinate → constituency lookup yet, so this guides the person to the
-  // map instead of pretending to resolve their exact seat.
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
       setLocateMsg("Location isn't supported on this device — try the map instead.");
@@ -100,21 +107,24 @@ export default function SimpleHomePage() {
   };
 
   return (
-    <div className="flex-1 w-full bg-background flex items-center justify-center px-4 py-16 md:py-24">
+    <div className="flex-1 w-full bg-background flex items-center justify-center px-4 py-12 md:py-20">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="w-full max-w-xl"
+        className="w-full max-w-xl space-y-8"
       >
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-[1.08] mb-4 text-center md:text-left">
-          How well did your MP<br />represent you?
-        </h1>
-        <p className="text-muted-foreground font-medium mb-8 text-center md:text-left">
-          Track attendance, questions, and bills — using public parliamentary records, in plain language.
-        </p>
+        {/* Hero */}
+        <div>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-[1.08] mb-4 text-center md:text-left">
+            How well did your MP<br />represent you?
+          </h1>
+          <p className="text-muted-foreground font-medium text-center md:text-left leading-relaxed">
+            Track attendance, questions, and bills — using public parliamentary records, in plain language.
+          </p>
+        </div>
 
-        {/* Search */}
+        {/* Search Bar */}
         <div className="relative" ref={containerRef}>
           <form onSubmit={handleSubmit} className="relative flex items-center bg-card border border-border/60 rounded-2xl h-14 px-4 shadow-sm focus-within:ring-2 focus-within:ring-orange-500/50 focus-within:border-orange-500/40 transition-all">
             <Search className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -142,7 +152,7 @@ export default function SimpleHomePage() {
                 {results.map(mp => (
                   <Link
                     key={mp.id}
-                   href={`/citizen/mp/${mp.id}`}
+                    href={`/citizen/mp/${mp.id}`}
                     className="flex items-center gap-3 p-3 hover:bg-background transition-colors border-b border-border/50 last:border-0"
                   >
                     <img src={mp.image_url} alt={mp.name} className="w-9 h-9 rounded-full object-cover shrink-0 border border-border" />
@@ -157,62 +167,108 @@ export default function SimpleHomePage() {
             )}
           </AnimatePresence>
         </div>
-<AskMP />
-      <div
-  className={`transition-all duration-200 ${
-    open && results.length > 0 ? "mt-80" : "mt-4"
-  }`}
->
-  <div className="flex flex-col sm:flex-row items-center gap-3">
-  
-  </div>
 
-  {locateMsg && (
-    <p className="text-xs text-muted-foreground mt-2 text-center sm:text-left">
-      {locateMsg}
-    </p>
-  )}
-
-  <div className="border-t border-dashed border-border/60 my-8" />
-
-  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 text-center sm:text-left">
-    Or explore
-  </p>
-
-  <div className="grid grid-cols-3 gap-3">
-  
-  </div>
-
-          <Link
-            href="/citizen/simple/find"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 px-6 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 active:scale-[0.98] transition-all"
-          >
-            <MapPin className="h-4 w-4" /> Find on map
-          </Link>
-          <button
-            onClick={handleUseLocation}
-            disabled={locating}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 px-6 bg-card border border-border/60 rounded-xl text-sm font-bold hover:border-orange-500/40 transition-all disabled:opacity-60"
-          >
-            <Navigation className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} /> {locating ? 'Locating…' : 'Use my location'}
-          </button>
-        </div>
-        {locateMsg && <p className="text-xs text-muted-foreground mt-2 text-center sm:text-left">{locateMsg}</p>}
-
-        <div className="border-t border-dashed border-border/60 my-8" />
-
-        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 text-center sm:text-left">Or explore</p>
-        <div className="grid grid-cols-3 gap-3">
-          {EXPLORE_CARDS.map(card => (
-            <Link
-              key={card.href}
-              href={card.href}
-              className="flex flex-col items-center gap-2 text-center p-4 bg-card border border-border/60 rounded-2xl hover:border-orange-500/30 hover:-translate-y-0.5 transition-all"
+        {/* Compact "Ask About an MP" Section */}
+        <div className="bg-card/70 border border-border/60 rounded-2xl p-5 shadow-sm space-y-3.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-orange-500" />
+              <p className="text-xs font-extrabold tracking-wider uppercase text-foreground">
+                ✨ Ask About an MP
+              </p>
+            </div>
+            <button
+              onClick={openAssistant}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border border-orange-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
-              <card.icon className={`h-5 w-5 ${card.color}`} />
-              <span className="text-[11px] font-bold leading-tight">{card.label}</span>
+              Open MP Assistant <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Ask questions about attendance, questions, debates, bills, rankings, states, parties or compare MPs.
+          </p>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {['Who has highest attendance?', 'Compare two MPs', 'MPs with attendance above 90%'].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => askQuestion(chip)}
+                className="px-3 py-1.5 bg-background hover:bg-neutral-800 border border-border/60 hover:border-orange-500/30 rounded-xl text-[11px] font-semibold text-foreground transition-all cursor-pointer"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Popular Questions */}
+        <div>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 text-center sm:text-left flex items-center gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5 text-orange-500" />
+            Popular Questions
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {POPULAR_QUESTIONS.map((pq) => (
+              <button
+                key={pq.text}
+                onClick={() => askQuestion(pq.text)}
+                className="flex items-center justify-between p-3.5 bg-card hover:bg-neutral-800 border border-border/60 hover:border-orange-500/40 rounded-xl text-left transition-all active:scale-[0.99] group cursor-pointer"
+              >
+                <div>
+                  <span className="block text-[9px] font-bold text-orange-500 uppercase tracking-wide mb-0.5">
+                    {pq.label}
+                  </span>
+                  <span className="text-xs font-bold text-foreground leading-tight">
+                    {pq.text}
+                  </span>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Find on map & Location */}
+        <div className="space-y-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Link
+              href="/citizen/simple/find"
+              className="w-full sm:flex-1 flex items-center justify-center gap-2 h-12 px-6 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 active:scale-[0.98] transition-all"
+            >
+              <MapPin className="h-4 w-4" /> Find on map
             </Link>
-          ))}
+            <button
+              onClick={handleUseLocation}
+              disabled={locating}
+              className="w-full sm:flex-1 flex items-center justify-center gap-2 h-12 px-6 bg-card border border-border/60 rounded-xl text-sm font-bold hover:border-orange-500/40 transition-all disabled:opacity-60 cursor-pointer"
+            >
+              <Navigation className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} /> {locating ? 'Locating…' : 'Use my location'}
+            </button>
+          </div>
+          {locateMsg && <p className="text-xs text-muted-foreground text-center sm:text-left">{locateMsg}</p>}
+        </div>
+
+        <div className="border-t border-dashed border-border/60 my-6" />
+
+        {/* Explore Links */}
+        <div>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 text-center sm:text-left">
+            Or explore
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            {EXPLORE_CARDS.map(card => (
+              <Link
+                key={card.href}
+                href={card.href}
+                className="flex flex-col items-center gap-2 text-center p-4 bg-card border border-border/60 rounded-2xl hover:border-orange-500/30 hover:-translate-y-0.5 transition-all"
+              >
+                <card.icon className={`h-5 w-5 ${card.color}`} />
+                <span className="text-[11px] font-bold leading-tight">{card.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </motion.div>
     </div>
